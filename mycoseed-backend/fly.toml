@@ -1,0 +1,37 @@
+# fly.toml app configuration file for mycoseed-backend
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = 'mycoseed-backend'
+primary_region = 'sin'
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3001"
+
+[processes]
+  app = "node dist/index.js"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '10s'
+    timeout = '5s'
+    grace_period = '5s'
+    method = 'GET'
+    path = '/api/health'
+    protocol = 'http'
+    tls_skip_verify = false
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
