@@ -1584,26 +1584,34 @@ export const getMemberById = async (id: number | string, baseUrl?: string): Prom
 
 /**
  * 根据成员ID获取钱包地址
- * 由于member对象中没有identifier，我们基于member ID生成确定性钱包地址
+ * 从后端 API 获取真实的钱包地址（evm_chain_address)
  */
 export const getWalletAddressByMemberId = async (id: number | string): Promise<string> => {
-  await new Promise(resolve => setTimeout(resolve, 100))
-  
-  // 基于member ID生成确定性钱包地址
-  // 使用ID作为种子，生成一个看起来像真实地址的字符串
-  const seed = `member_${id}`
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
+  try {
+    const baseUrl = getApiBaseUrl()
+    const userId = String(id) // 确保是字符串类型（UUID）
+
+    const response = await fetch(`${baseUrl}/api/auth/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      console.error('Failed to get wallet address:', response.statusText)
+      return ''
+    }
+
+    const data = await response.json()
+
+    // 返回真实的钱包地址，如果没有则返回空字符串
+    return data.user?.evm_chain_address || ''
+
+  } catch (error) {
+    console.error('Failed to get wallet address by member ID:', error)
+    return ''
   }
-  
-  // 生成40个字符的十六进制地址（去掉0x前缀后）
-  const hexString = Math.abs(hash).toString(16).padStart(8, '0')
-  const address = `0x${hexString.repeat(5).slice(0, 40)}`
-  
-  return address
 }
 
 /**
