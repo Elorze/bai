@@ -10,12 +10,12 @@
       >
         <div class="flip-card-inner">
           <!-- 卡片正面 -->
-          <div class="flip-card-face flip-card-front bg-white border-2 border-black shadow-pixel p-6 pb-8 relative">
+          <div class="flip-card-face flip-card-front bg-white border border-border rounded-2xl shadow-soft p-6 pb-8 relative">
             <!-- 编辑按钮（仅「我的」页面显示） -->
             <div v-if="isMyProfile" class="absolute top-4 right-4 z-20">
               <button
                 @click.stop="isEditing = !isEditing"
-                class="w-10 h-10 bg-gray-100 border-2 border-black flex items-center justify-center hover:bg-gray-200 transition-colors"
+                class="w-10 h-10 bg-gray-100 border border-border rounded-2xl flex items-center justify-center hover:bg-gray-200 transition-colors"
               >
                 <span v-if="!isEditing" class="text-xl">✏️</span>
                 <span v-else class="text-xl">❌</span>
@@ -35,7 +35,7 @@
             <PixelAvatar
             v-else
             :seed="member?.name || member?.avatarSeed || 'user'" size="xl" />
-            <div class="absolute -bottom-2 -right-2 bg-black text-white text-xs font-pixel px-2 py-1 border-2 border-white">
+            <div class="absolute -bottom-2 -right-2 bg-black text-white text-xs font-bold px-2 py-1 border-2 border-white">
               LV. {{ memberLevel }}
             </div>
           </div>
@@ -50,7 +50,7 @@
             :seed="editingForm.name || 'user'" size="xl" />
             <button
               @click="changeAvatar"
-              class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-pixel hover:bg-black/70 transition-colors"
+              class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold hover:bg-black/70 transition-colors"
             >
               更换头像
             </button>
@@ -60,29 +60,29 @@
         <!-- 姓名与简介 -->
         <div class="text-center w-full max-w-xs">
           <div v-if="!isEditing">
-            <h1 class="font-pixel text-2xl mb-1">{{ member?.name }}</h1>
+            <h1 class="font-bold text-2xl mb-1">{{ member?.name }}</h1>
             <!-- 简介显示 -->
-            <div v-if="member?.bio" class="text-sm text-gray-600 font-vt323 mt-2 px-4 max-w-xs mx-auto">
+            <div v-if="member?.bio" class="text-sm text-gray-600  mt-2 px-4 max-w-xs mx-auto">
               {{ member.bio }}
             </div>
           </div>
           <div v-else class="space-y-3">
             <div>
-              <label class="block font-pixel text-xs uppercase mb-1 text-black text-left">名字</label>
+              <label class="block font-bold text-xs uppercase mb-1 text-black text-left">名字</label>
               <input
                 v-model="editingForm.name"
                 type="text"
-                class="w-full h-10 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                class="w-full h-10 px-3 bg-white border border-border rounded-2xl shadow-soft-sm  text-base focus:outline-none focus:shadow-soft focus:-translate-y-1 transition-all"
                 placeholder="输入名字"
               />
             </div>
             <!-- 简介编辑 -->
             <div>
-              <label class="block font-pixel text-xs uppercase mb-1 text-black text-left">简介</label>
+              <label class="block font-bold text-xs uppercase mb-1 text-black text-left">简介</label>
               <textarea
                 v-model="editingForm.bio"
                 rows="3"
-                class="w-full px-3 py-2 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                class="w-full px-3 py-2 bg-white border border-border rounded-2xl shadow-soft-sm  text-base focus:outline-none focus:shadow-soft focus:-translate-y-1 transition-all resize-none"
                 placeholder="输入简介"
               />
             </div>
@@ -100,7 +100,7 @@
           </div>
 
           <!-- 卡片背面 -->
-          <div class="flip-card-face flip-card-back bg-white border-2 border-black shadow-pixel p-6 pb-8 relative">
+          <div class="flip-card-face flip-card-back bg-white border border-border rounded-2xl shadow-soft p-6 pb-8 relative">
             <div class="flex flex-col gap-4">
               <!-- 钱包地址和链选择按钮（左上方）+ 发送按钮（右上角） -->
               <div class="flex items-center justify-between gap-3">
@@ -108,15 +108,15 @@
                   <!-- Chain Switch Button -->
                   <button 
                     @click.stop="showChainSelector = true"
-                    class="w-10 h-10 bg-mario-red border-2 border-black flex items-center justify-center text-white font-pixel text-sm shadow-pixel hover:scale-105 transition-transform"
+                    class="w-10 h-10 bg-destructive border border-border rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-soft hover:scale-105 transition-transform"
                   >
                     {{ currentChain.shortName }}
                   </button>
                   
                   <!-- Address Display -->
-                  <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border-2 border-black shadow-pixel-sm flex-1">
+                  <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border border-border rounded-2xl shadow-soft-sm flex-1">
                     <PixelAvatar :seed="walletAddress || 'user'" size="sm" />
-                    <span class="font-vt323 text-lg">{{ truncatedAddress }}</span>
+                    <span class=" text-lg">{{ truncatedAddress }}</span>
                     <button 
                       @click.stop="copyAddress"
                       class="text-gray-400 hover:text-black transition-colors cursor-pointer"
@@ -150,24 +150,24 @@
                     <img :src="qrCodeUrl" alt="QR Code" class="w-full h-full image-pixelated" />
                   </div>
                   <div v-else class="w-32 h-32 bg-gray-100 border-4 border-black flex items-center justify-center">
-                    <span class="text-gray-400 font-vt323 text-sm">加载中...</span>
+                    <span class="text-gray-400  text-sm">加载中...</span>
                   </div>
                 </div>
 
                 <!-- 社区积分显示（替换原来的姓名位置） -->
                 <div v-if="userCommunity" class="flex flex-col items-center gap-2 w-full max-w-xs">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-green-200 border-2 border-black flex items-center justify-center text-xl shadow-pixel">
+                    <div class="w-10 h-10 bg-green-200 border border-border rounded-2xl flex items-center justify-center text-xl shadow-soft">
                       {{ userCommunity.pointName === '零废弃积分' ? '♻️' : '🌾' }}
                     </div>
                     <div class="text-center">
-                      <div class="font-pixel text-xs text-green-600">{{ userCommunity.pointName }}</div>
-                      <div class="font-vt323 text-2xl">{{ formatPoints(userCommunityPoints) }} {{ getPointAbbr(userCommunity.pointName) }}</div>
+                      <div class="font-bold text-xs text-green-600">{{ userCommunity.pointName }}</div>
+                      <div class=" text-2xl">{{ formatPoints(userCommunityPoints) }} {{ getPointAbbr(userCommunity.pointName) }}</div>
                     </div>
                   </div>
                 </div>
                 <div v-else class="text-center w-full max-w-xs">
-                  <div class="text-gray-400 font-vt323 text-sm">未加入任何社区</div>
+                  <div class="text-gray-400  text-sm">未加入任何社区</div>
                 </div>
               </div>
             </div>
@@ -189,24 +189,24 @@
           
           <div class="space-y-4 py-4">
             <div>
-              <label class="block font-pixel text-xs mb-2">接收方 (地址 / 手机号)</label>
+              <label class="block font-bold text-xs mb-2">接收方 (地址 / 手机号)</label>
               <div class="flex gap-2">
                 <input 
                   v-model="sendForm.recipient" 
                   type="text" 
                   placeholder="0x... or 138..." 
-                  class="flex-1 p-3 font-vt323 text-xl border-2 border-black shadow-pixel-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
+                  class="flex-1 p-3  text-xl border border-border rounded-2xl shadow-soft-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
                 >
                 <button 
                   @click="openScanner" 
-                  class="px-4 py-3 bg-white border-2 border-black shadow-pixel-sm hover:bg-gray-100 transition-colors font-pixel text-xs"
+                  class="px-4 py-3 bg-white border border-border rounded-2xl shadow-soft-sm hover:bg-gray-100 transition-colors font-bold text-xs"
                   title="扫描二维码"
                 >
                   📷
                 </button>
                 <button 
                   @click="showContacts = true" 
-                  class="px-4 py-3 bg-white border-2 border-black shadow-pixel-sm hover:bg-gray-100 transition-colors font-pixel text-xs"
+                  class="px-4 py-3 bg-white border border-border rounded-2xl shadow-soft-sm hover:bg-gray-100 transition-colors font-bold text-xs"
                   title="通讯录"
                 >
                   📇
@@ -214,22 +214,22 @@
               </div>
             </div>
             <div>
-              <label class="block font-pixel text-xs mb-2">金额</label>
+              <label class="block font-bold text-xs mb-2">金额</label>
               <input 
                 v-model="sendForm.amount" 
                 type="number" 
                 step="0.000001"
                 placeholder="0.00" 
-                class="w-full p-3 font-vt323 text-xl border-2 border-black shadow-pixel-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
+                class="w-full p-3  text-xl border border-border rounded-2xl shadow-soft-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
               >
             </div>
             <div>
-              <label class="block font-pixel text-xs mb-2">备注信息</label>
+              <label class="block font-bold text-xs mb-2">备注信息</label>
               <input 
                 v-model="sendForm.note" 
                 type="text" 
                 placeholder="可选，添加备注信息..." 
-                class="w-full p-3 font-vt323 text-lg border-2 border-black shadow-pixel-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
+                class="w-full p-3  text-lg border border-border rounded-2xl shadow-soft-sm focus:outline-none focus:translate-y-1 focus:shadow-none transition-all"
               >
             </div>
           </div>
@@ -260,19 +260,19 @@
               v-for="contact in savedContacts" 
               :key="contact.id"
               @click="selectContact(contact)"
-              class="flex items-center justify-between p-3 border-2 border-black/10 hover:bg-gray-50 hover:border-black cursor-pointer transition-all"
+              class="flex items-center justify-between p-3 border border-border rounded-2xl/10 hover:bg-gray-50 hover:border-black cursor-pointer transition-all"
             >
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gray-200 border-2 border-black flex items-center justify-center text-lg shadow-pixel-sm">
+                <div class="w-10 h-10 bg-gray-200 border border-border rounded-2xl flex items-center justify-center text-lg shadow-soft-sm">
                   {{ contact.icon }}
                 </div>
                 <div>
-                  <div class="font-pixel text-xs">{{ contact.name }}</div>
-                  <div class="font-vt323 text-sm text-gray-600">{{ contact.address }}</div>
+                  <div class="font-bold text-xs">{{ contact.name }}</div>
+                  <div class=" text-sm text-gray-600">{{ contact.address }}</div>
                 </div>
               </div>
             </div>
-            <div v-if="savedContacts.length === 0" class="text-center py-8 text-gray-400 font-vt323">
+            <div v-if="savedContacts.length === 0" class="text-center py-8 text-gray-400 ">
               暂无保存的地址
             </div>
           </div>
@@ -300,17 +300,17 @@
             <div class="w-full h-64 bg-black/10 border-4 border-dashed border-black flex items-center justify-center mb-4">
               <div class="text-center">
                 <div class="text-4xl mb-2">📷</div>
-                <div class="font-pixel text-xs text-gray-500">请允许访问摄像头权限</div>
-                <div class="font-vt323 text-sm text-gray-400 mt-2">或手动输入地址</div>
+                <div class="font-bold text-xs text-gray-500">请允许访问摄像头权限</div>
+                <div class=" text-sm text-gray-400 mt-2">或手动输入地址</div>
               </div>
             </div>
             <div class="space-y-2">
-              <label class="block font-pixel text-xs">手动输入二维码内容</label>
+              <label class="block font-bold text-xs">手动输入二维码内容</label>
               <input 
                 v-model="scannedAddress" 
                 type="text" 
                 placeholder="粘贴二维码内容..." 
-                class="w-full p-3 font-vt323 text-lg border-2 border-black shadow-pixel-sm focus:outline-none"
+                class="w-full p-3  text-lg border border-border rounded-2xl shadow-soft-sm focus:outline-none"
                 @keyup.enter="applyScannedAddress"
               >
             </div>
@@ -350,18 +350,18 @@
               <div class="flex items-center gap-3">
                 <div 
                   :class="[
-                    'w-8 h-8 border-2 border-black flex items-center justify-center text-white font-pixel text-xs shadow-pixel-sm',
-                    currentChain.id === chain.id ? 'bg-mario-red' : 'bg-gray-400'
+                    'w-8 h-8 border border-border rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-soft-sm',
+                    currentChain.id === chain.id ? 'bg-destructive' : 'bg-gray-400'
                   ]"
                 >
                   {{ chain.shortName }}
                 </div>
                 <div>
-                  <div class="font-pixel text-xs">{{ chain.name }}</div>
-                  <div class="font-vt323 text-xs text-gray-500">{{ chain.nativeCurrency.symbol }}</div>
+                  <div class="font-bold text-xs">{{ chain.name }}</div>
+                  <div class=" text-xs text-gray-500">{{ chain.nativeCurrency.symbol }}</div>
                 </div>
               </div>
-              <div v-if="currentChain.id === chain.id" class="text-green-600 font-pixel text-xs">
+              <div v-if="currentChain.id === chain.id" class="text-green-600 font-bold text-xs">
                 ✓
               </div>
             </div>
@@ -384,7 +384,7 @@
             :key="tab.id"
             @click="activeTab = tab.id"
             :class="[
-              'px-4 py-2 font-pixel text-sm whitespace-nowrap transition-colors',
+              'px-4 py-2 font-bold text-sm whitespace-nowrap transition-colors',
               activeTab === tab.id ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'
             ]"
           >
@@ -398,19 +398,19 @@
         <!-- HISTORY TAB -->
         <div v-if="activeTab === 'HISTORY'" class="space-y-4">
           <!-- 加载状态 -->
-          <div v-if="loadingTasks" class="text-center py-8 text-gray-500 font-vt323">
+          <div v-if="loadingTasks" class="text-center py-8 text-gray-500 ">
             加载中...
           </div>
           
           <!-- 任务列表 -->
           <div v-else-if="claimedTasks.length > 0">
-            <div v-for="task in claimedTasks" :key="task.id" class="bg-white border-2 border-black p-4 shadow-pixel-sm hover:shadow-pixel transition-shadow cursor-pointer" @click="navigateTo(`/tasks/${task.id}`)">
+            <div v-for="task in claimedTasks" :key="task.id" class="bg-white border border-border rounded-2xl p-4 shadow-soft-sm hover:shadow-soft transition-shadow cursor-pointer" @click="navigateTo(`/tasks/${task.id}`)">
               <div class="flex items-start gap-3">
                 <div class="text-2xl">{{ getTaskIcon(task.status) }}</div>
                 <div class="flex-1">
                   <div class="flex justify-between items-start mb-1">
-                    <div class="font-bold font-vt323 text-lg leading-tight">{{ task.title }}</div>
-                    <div v-if="task.status === 'completed'" class="font-pixel text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    <div class="font-bold  text-lg leading-tight">{{ task.title }}</div>
+                    <div v-if="task.status === 'completed'" class="font-bold text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
                       +{{ task.reward }} {{ taskRewardSymbols[task.id] || '积分' }}
                     </div>
                   </div>
@@ -418,7 +418,7 @@
                     <span :class="getStatusBadgeClass(task.status)">
                       {{ getStatusText(task.status) }}
                     </span>
-                    <span v-if="task.status === 'claimed' || task.status === 'unsubmit'" class="font-pixel text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                    <span v-if="task.status === 'claimed' || task.status === 'unsubmit'" class="font-bold text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                       进行中
                     </span>
                   </div>
@@ -436,16 +436,16 @@
           <!-- 空状态 -->
           <div v-else class="text-center py-12">
             <div class="text-4xl mb-4">📋</div>
-            <div class="font-vt323 text-gray-500">还没有领取任何任务</div>
+            <div class=" text-gray-500">还没有领取任何任务</div>
           </div>
         </div>
 
         <!-- BADGES TAB -->
         <div v-else-if="activeTab === 'BADGES'" class="grid grid-cols-3 gap-3">
-          <div v-for="i in 8" :key="i" class="aspect-square bg-white border-2 border-black flex flex-col items-center justify-center p-2 hover:-translate-y-1 transition-transform">
+          <div v-for="i in 8" :key="i" class="aspect-square bg-white border border-border rounded-2xl flex flex-col items-center justify-center p-2 hover:-translate-y-1 transition-transform">
             <span v-if="i <= 3" class="text-3xl mb-2">🌟</span>
             <span v-else class="text-3xl mb-2 grayscale opacity-30">🔒</span>
-            <span class="font-pixel text-[10px] text-center text-gray-600">{{ i <= 3 ? '已解锁' : '未解锁' }}</span>
+            <span class="font-bold text-[10px] text-center text-gray-600">{{ i <= 3 ? '已解锁' : '未解锁' }}</span>
           </div>
         </div>
 
@@ -963,14 +963,14 @@ const getTaskIcon = (status: Task['status']): string => {
 // 获取状态徽章样式
 const getStatusBadgeClass = (status: Task['status']): string => {
   const classMap: Record<string, string> = {
-    'unclaimed': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-yellow-600 text-yellow-600 bg-yellow-50',
-    'claimed': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-blue-600 text-blue-600 bg-blue-50',
-    'unsubmit': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-blue-600 text-blue-600 bg-blue-50',
-    'under_review': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-orange-600 text-orange-600 bg-orange-50',
-    'completed': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-green-600 text-green-600 bg-green-50',
-    'rejected': 'font-pixel text-[10px] px-2 py-0.5 rounded border border-red-600 text-red-600 bg-red-50'
+    'unclaimed': 'font-bold text-[10px] px-2 py-0.5 rounded border border-yellow-600 text-yellow-600 bg-yellow-50',
+    'claimed': 'font-bold text-[10px] px-2 py-0.5 rounded border border-blue-600 text-blue-600 bg-blue-50',
+    'unsubmit': 'font-bold text-[10px] px-2 py-0.5 rounded border border-blue-600 text-blue-600 bg-blue-50',
+    'under_review': 'font-bold text-[10px] px-2 py-0.5 rounded border border-orange-600 text-orange-600 bg-orange-50',
+    'completed': 'font-bold text-[10px] px-2 py-0.5 rounded border border-green-600 text-green-600 bg-green-50',
+    'rejected': 'font-bold text-[10px] px-2 py-0.5 rounded border border-red-600 text-red-600 bg-destructive-50'
   }
-  return classMap[status] || 'font-pixel text-[10px] px-2 py-0.5 rounded border border-gray-600 text-gray-600 bg-gray-50'
+  return classMap[status] || 'font-bold text-[10px] px-2 py-0.5 rounded border border-gray-600 text-gray-600 bg-gray-50'
 }
 
 // 格式化任务日期

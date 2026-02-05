@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-mario-sky py-4 md:py-8">
+  <div class="min-h-screen bg-background py-4 md:py-8">
     <div class="container mx-auto px-4 md:px-6 max-w-4xl pb-32 md:pb-24">
       <!-- 页面标题 -->
       <div class="mb-6 md:mb-8 text-center">
-        <h1 class="font-pixel text-2xl md:text-4xl text-white text-shadow-pixel mb-2 md:mb-4">发起活动</h1>
-        <div class="w-24 md:w-32 h-1 bg-white mx-auto border-2 border-black"></div>
+        <h1 class="text-2xl md:text-4xl font-bold text-text-title mb-2 md:mb-4">发起活动</h1>
+        <div class="w-24 md:w-32 h-1 bg-input-bg mx-auto border border-border rounded-2xl"></div>
       </div>
 
       <!-- 活动创建表单 -->
@@ -13,123 +13,123 @@
           <!-- 基本信息 -->
           <div class="space-y-4">
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">活动名称 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">活动名称 *</label>
               <input 
                 v-model="activityForm.name" 
                 type="text"
                 placeholder="输入活动名称"
-                class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
               />
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">活动描述 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">活动描述 *</label>
               <textarea 
                 v-model="activityForm.description" 
                 placeholder="描述活动的具体内容、目标、流程等信息..."
                 rows="4"
-                class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                class="w-full px-4 py-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all resize-none"
               ></textarea>
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">活动地点（可选）</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">活动地点（可选）</label>
               <input 
                 v-model="activityForm.location" 
                 type="text"
                 placeholder="输入活动地点"
-                class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
               />
             </div>
 
             <!-- 移动端单列，桌面端双列 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">开始时间 *</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">开始时间 *</label>
                 <div class="relative">
                   <input 
                     v-model="activityForm.startTime" 
                     type="datetime-local"
                     :min="minStart"
                     ref="startTimeInput"
-                    class="w-full h-12 px-4 pr-12 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                    class="w-full h-12 px-4 pr-12 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                   />
                   <div 
                     class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
                     @click.stop="openStartTimePicker"
                   >
-                    <Icon name="heroicons:calendar" class="w-6 h-6 text-black" />
+                    <Icon name="heroicons:calendar" class="w-6 h-6 text-text-title" />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">结束时间 *</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">结束时间 *</label>
                 <div class="relative">
                   <input 
                     v-model="activityForm.endTime" 
                     type="datetime-local"
                     :min="activityForm.startTime || minStart"
                     ref="endTimeInput"
-                    class="w-full h-12 px-4 pr-12 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                    class="w-full h-12 px-4 pr-12 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                   />
                   <div 
                     class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
                     @click.stop="openEndTimePicker"
                   >
-                    <Icon name="heroicons:calendar" class="w-6 h-6 text-black" />
+                    <Icon name="heroicons:calendar" class="w-6 h-6 text-text-title" />
                   </div>
                 </div>
               </div>
             </div>
-            <p v-if="dateError" class="mt-1 font-vt323 text-xs text-mario-red">
+            <p v-if="dateError" class="mt-1  text-xs text-destructive">
               {{ dateError }}
             </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">奖励积分（可选）</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">奖励积分（可选）</label>
                 <input 
                   v-model="activityForm.reward" 
                   type="number"
                   step="1"
                   min="0"
                   placeholder="0"
-                  class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 />
               </div>
 
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">最大参与人数（可选）</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">最大参与人数（可选）</label>
                 <input 
                   v-model="activityForm.maxParticipants" 
                   type="number"
                   step="1"
                   min="1"
                   placeholder="不限制"
-                  class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">主办方（可选）</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">主办方（可选）</label>
               <input 
                 v-model="activityForm.organizer" 
                 type="text"
                 placeholder="输入主办方名称"
-                class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
               />
             </div>
 
             <!-- 活动标签 -->
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">活动标签（可选）</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">活动标签（可选）</label>
               <div class="flex flex-wrap gap-2 mb-2">
                 <span
                   v-for="(tag, index) in activityForm.tags"
                   :key="index"
-                  class="bg-mario-green text-white border-2 border-black px-3 py-1 text-xs font-pixel flex items-center gap-1"
+                  class="bg-success text-white border border-border rounded-2xl px-3 py-1 text-xs font-bold flex items-center gap-1"
                 >
                   {{ tag }}
                   <button
@@ -145,7 +145,7 @@
                   v-model="newTag"
                   type="text"
                   @keyup.enter="addTag"
-                  class="flex-1 h-10 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="flex-1 h-10 px-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                   placeholder="输入标签后按回车"
                 />
                 <PixelButton
@@ -166,7 +166,7 @@
     </div>
 
     <!-- 底部固定操作栏 -->
-    <div class="fixed bottom-16 left-0 right-0 p-4 bg-white border-t-2 border-black z-[60] flex gap-3 shadow-[0_-4px_0_rgba(0,0,0,0.05)] md:bottom-0 md:border-t-2" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
+    <div class="fixed bottom-16 left-0 right-0 p-4 bg-input-bg border-t-2 border-black z-[60] flex gap-3 shadow-[0_-4px_0_rgba(0,0,0,0.05)] md:bottom-0 md:border-t-2" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
       <PixelButton 
         @click="navigateTo('/tasks')"
         variant="secondary"
@@ -376,11 +376,6 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.text-shadow-pixel {
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-}
-</style>
 
 
 

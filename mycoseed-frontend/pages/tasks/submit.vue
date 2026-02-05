@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-mario-sky py-4 md:py-8">
+  <div class="min-h-screen bg-background py-4 md:py-8">
     <div class="container mx-auto px-4 md:px-6 max-w-4xl">
       <!-- 返回按钮 -->
       <div class="mb-6">
@@ -14,7 +14,7 @@
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div class="font-pixel text-lg text-white text-shadow-pixel animate-pulse">加载中...</div>
+        <div class="text-lg text-text-body animate-pulse">加载中...</div>
       </div>
 
       <!-- 提交表单 -->
@@ -24,7 +24,7 @@
             提交任务
           </template>
           
-          <p class="font-vt323 text-lg text-black mb-6">
+          <p class=" text-lg text-text-title mb-6">
             <span v-if="requiresFileUpload && requiresGPS">请上传文件并验证位置</span>
             <span v-else-if="requiresFileUpload">请上传您的任务完成证明和相关文件</span>
             <span v-else-if="requiresGPS">请验证您的位置信息</span>
@@ -34,47 +34,47 @@
           
           <form @submit.prevent="submitForm" class="space-y-6">
             <!-- 任务信息 -->
-            <div class="bg-white border-2 border-black shadow-pixel-sm p-4">
-              <h3 class="font-pixel text-xs uppercase text-black mb-2">{{ task.title }}</h3>
-              <p class="font-vt323 text-base text-black mb-3">{{ task.description }}</p>
+            <div class="bg-card border border-border rounded-2xl shadow-soft p-4">
+              <h3 class="font-bold text-xs uppercase text-text-title mb-2">{{ task.title }}</h3>
+              <p class=" text-base text-text-title mb-3">{{ task.description }}</p>
               <div class="flex items-center gap-3 flex-wrap">
-                <span class="px-3 py-1.5 bg-mario-coin text-white border-2 border-black shadow-pixel-sm font-pixel text-[10px] uppercase">
+                <span class="px-3 py-1.5 bg-primary text-white border border-border rounded-2xl shadow-soft font-bold text-[10px] uppercase">
                   {{ task.reward }} {{ taskRewardSymbol }}
                 </span>
                 <div class="flex flex-col gap-1">
-                  <span class="font-vt323 text-sm text-black">领取截止: {{ formatDate(task.deadline) }}</span>
-                  <span class="font-vt323 text-sm text-black">提交截止: {{ formatDate(task.submitDeadline || task.deadline) }}</span>
+                  <span class=" text-sm text-text-title">领取截止: {{ formatDate(task.deadline) }}</span>
+                  <span class=" text-sm text-text-title">提交截止: {{ formatDate(task.submitDeadline || task.deadline) }}</span>
                 </div>
               </div>
             </div>
 
             <!-- 提交说明 -->
-            <div class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-2">提交说明</h3>
-              <p class="font-vt323 text-base text-black">{{ task.submissionInstructions || '请按照任务要求完成并提交相关凭证。' }}</p>
+            <div class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-text-title mb-2">提交说明</h3>
+              <p class=" text-base text-text-title">{{ task.submissionInstructions || '请按照任务要求完成并提交相关凭证。' }}</p>
             </div>
 
             <!-- 文件上传 -->
-            <div v-if="requiresFileUpload" class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">上传文件</h3>
+            <div v-if="requiresFileUpload" class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-text-title mb-4">上传文件</h3>
               <div class="space-y-4">
                 <!-- 主要证明文件 -->
                 <div>
-                  <label class="block font-pixel text-[10px] uppercase text-black mb-2">
-                    主要证明文件 <span class="text-mario-red">*</span>
+                  <label class="block font-bold text-[10px] uppercase text-text-title mb-2">
+                    主要证明文件 <span class="text-destructive">*</span>
                   </label>
                   <div 
                     @click="triggerFileInput('main')"
-                    class="border-2 border-dashed border-black bg-white p-6 md:p-8 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-pixel transition-all"
-                    :class="{ 'border-mario-red shadow-pixel': dragOver }"
+                    class="border-2 border-dashed border-black bg-card p-6 md:p-8 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-soft transition-all"
+                    :class="{ 'border-destructive shadow-soft': dragOver }"
                     @dragover.prevent="dragOver = true"
                     @dragleave="dragOver = false"
                     @drop.prevent="handleFileDrop($event, 'main')"
                   >
                     <div class="text-4xl mb-3">☁️</div>
-                    <p class="font-vt323 text-base text-black font-medium mb-1">点击上传或拖拽文件到此处</p>
-                    <p class="font-vt323 text-sm text-black/70">支持 {{ allowedFileTypesText }} 格式</p>
-                    <p class="font-vt323 text-xs text-black/60 mt-1">最大 10MB</p>
+                    <p class=" text-base text-text-title font-medium mb-1">点击上传或拖拽文件到此处</p>
+                    <p class=" text-sm text-text-title/70">支持 {{ allowedFileTypesText }} 格式</p>
+                    <p class=" text-xs text-text-title/60 mt-1">最大 10MB</p>
                   </div>
                   <input
                     ref="mainFileInput"
@@ -85,12 +85,12 @@
                   />
                   
                   <!-- 已选择的文件 -->
-                  <div v-if="selectedFiles.main" class="mt-3 p-3 bg-white border-2 border-black shadow-pixel-sm">
+                  <div v-if="selectedFiles.main" class="mt-3 p-3 bg-card border border-border rounded-2xl shadow-soft">
                     <div class="flex items-center gap-3">
                       <span class="text-2xl">📄</span>
                       <div class="flex-1">
-                        <div class="font-vt323 text-sm text-black font-medium">{{ selectedFiles.main.name }}</div>
-                        <div class="font-vt323 text-xs text-black/60">({{ formatFileSize(selectedFiles.main.size) }})</div>
+                        <div class=" text-sm text-text-title font-medium">{{ selectedFiles.main.name }}</div>
+                        <div class=" text-xs text-text-title/60">({{ formatFileSize(selectedFiles.main.size) }})</div>
                       </div>
                       <PixelButton
                         @click="removeFile('main')"
@@ -105,15 +105,15 @@
 
                 <!-- 附加文件 -->
                 <div>
-                  <label class="block font-pixel text-[10px] uppercase text-black mb-2">
+                  <label class="block font-bold text-[10px] uppercase text-text-title mb-2">
                     附加文件 (可选)
                   </label>
                   <div 
                     @click="triggerFileInput('additional')"
-                    class="border-2 border-dashed border-black bg-white p-4 md:p-6 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-pixel transition-all"
+                    class="border-2 border-dashed border-black bg-card p-4 md:p-6 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-soft transition-all"
                   >
                     <div class="text-2xl mb-2">➕</div>
-                    <p class="font-vt323 text-sm text-black">添加更多文件</p>
+                    <p class=" text-sm text-text-title">添加更多文件</p>
                   </div>
                   <input
                     ref="additionalFileInput"
@@ -129,13 +129,13 @@
                     <div
                       v-for="(file, index) in selectedFiles.additional"
                       :key="index"
-                      class="p-3 bg-white border-2 border-black shadow-pixel-sm"
+                      class="p-3 bg-card border border-border rounded-2xl shadow-soft"
                     >
                       <div class="flex items-center gap-3">
                         <span class="text-2xl">📄</span>
                         <div class="flex-1">
-                          <div class="font-vt323 text-sm text-black font-medium">{{ file.name }}</div>
-                          <div class="font-vt323 text-xs text-black/60">({{ formatFileSize(file.size) }})</div>
+                          <div class=" text-sm text-text-title font-medium">{{ file.name }}</div>
+                          <div class=" text-xs text-text-title/60">({{ formatFileSize(file.size) }})</div>
                         </div>
                         <PixelButton
                           @click="removeFile('additional', index)"
@@ -152,11 +152,11 @@
             </div>
 
             <!-- GPS定位验证 -->
-            <div v-if="requiresGPS" class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">位置定位验证</h3>
+            <div v-if="requiresGPS" class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-text-title mb-4">位置定位验证</h3>
               <div class="space-y-3">
-                <div v-if="!gpsLocation.latitude" class="p-4 bg-white border-2 border-black shadow-pixel-sm">
-                  <p class="font-vt323 text-base text-black mb-3">请获取您当前的位置信息</p>
+                <div v-if="!gpsLocation.latitude" class="p-4 bg-card border border-border rounded-2xl shadow-soft">
+                  <p class=" text-base text-text-title mb-3">请获取您当前的位置信息</p>
                   <PixelButton
                     @click="getGPSLocation"
                     :disabled="isGettingLocation"
@@ -166,16 +166,16 @@
                   >
                     {{ isGettingLocation ? '获取位置中...' : '📍 获取位置' }}
                   </PixelButton>
-                  <p v-if="locationError" class="mt-2 font-vt323 text-sm text-mario-red">
+                  <p v-if="locationError" class="mt-2  text-sm text-destructive">
                     {{ locationError }}
                   </p>
                 </div>
-                <div v-else class="p-4 bg-green-50 border-2 border-green-600 shadow-pixel-sm">
+                <div v-else class="p-4 bg-green-50 border-2 border-green-600 shadow-soft">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="text-2xl">✅</span>
-                    <span class="font-pixel text-xs uppercase text-green-800">位置已验证</span>
+                    <span class="font-bold text-xs uppercase text-green-800">位置已验证</span>
                   </div>
-                  <div class="font-vt323 text-sm text-black space-y-1">
+                  <div class=" text-sm text-text-title space-y-1">
                     <div>纬度: {{ gpsLocation.latitude?.toFixed(6) }}</div>
                     <div>经度: {{ gpsLocation.longitude?.toFixed(6) }}</div>
                     <div v-if="gpsLocation.accuracy">精度: ±{{ Math.round(gpsLocation.accuracy) }}米</div>
@@ -194,17 +194,17 @@
             </div>
 
             <!-- 提交说明输入 -->
-            <div v-if="requiresDescription" class="pt-4 border-t-2 border-black/20">
-              <label class="block font-pixel text-xs uppercase text-black mb-2">
-                提交说明 <span class="text-mario-red">*</span>
+            <div v-if="requiresDescription" class="pt-4 border-t border-border">
+              <label class="block font-bold text-xs uppercase text-text-title mb-2">
+                提交说明 <span class="text-destructive">*</span>
               </label>
               <textarea
                 v-model="submissionDescription"
                 :placeholder="task.proofConfig?.description?.prompt || '请详细描述您完成的任务内容，包括主要工作、技术实现、遇到的问题和解决方案等...'"
                 rows="6"
-                class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base text-black focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                class="w-full px-4 py-3 bg-input-bg border border-border rounded-2xl shadow-soft text-base text-text-title focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all resize-none"
               />
-              <p v-if="task.proofConfig?.description?.minWords" class="mt-2 font-vt323 text-xs" :class="isValidDescription ? 'text-black/60' : 'text-mario-red'">
+              <p v-if="task.proofConfig?.description?.minWords" class="mt-2  text-xs" :class="isValidDescription ? 'text-text-title/60' : 'text-destructive'">
                 最少字数: {{ task.proofConfig.description.minWords }} 字
                 <span v-if="submissionDescription.trim().length > 0">
                   (当前: {{ submissionDescription.trim().length }} 字)
@@ -216,7 +216,7 @@
             </div>
 
             <!-- 提交按钮 -->
-            <div class="flex gap-4 pt-6 border-t-2 border-black/20">
+            <div class="flex gap-4 pt-6 border-t border-border">
               <PixelButton
                 @click="navigateTo(`/tasks/${taskId}`)"
                 variant="secondary"

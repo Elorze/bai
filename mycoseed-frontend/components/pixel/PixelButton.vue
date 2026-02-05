@@ -1,7 +1,7 @@
 <template>
   <button
     :class="[
-      'pixel-btn relative inline-flex items-center justify-center font-pixel uppercase transition-all active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed',
+      'relative inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl',
       variantClasses,
       sizeClasses,
       block ? 'w-full' : ''
@@ -41,37 +41,22 @@ defineEmits(['click'])
 
 const variantClasses = computed(() => {
   const variants: Record<string, string> = {
-    primary: 'bg-mario-red text-white border-2 border-black shadow-pixel hover:bg-red-600',
-    secondary: 'bg-white text-black border-2 border-black shadow-pixel hover:bg-gray-100',
-    success: 'bg-mario-green text-white border-2 border-black shadow-pixel hover:bg-green-600',
-    warning: 'bg-mario-yellow text-black border-2 border-black shadow-pixel hover:bg-yellow-500',
-    danger: 'bg-black text-white border-2 border-white shadow-pixel-sm hover:bg-gray-900',
-    ghost: 'bg-transparent text-black hover:bg-black/5 border-2 border-transparent hover:border-black/10'
+    primary: 'bg-primary text-white shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-primary/40',
+    secondary: 'bg-white text-text-body border border-border hover:bg-gray-50',
+    success: 'bg-success text-white shadow-soft hover:-translate-y-0.5',
+    warning: 'bg-warning text-white shadow-soft hover:-translate-y-0.5',
+    danger: 'bg-destructive text-white shadow-soft hover:-translate-y-0.5',
+    ghost: 'bg-transparent text-text-body hover:bg-gray-100'
   }
   return variants[props.variant]
 })
 
 const sizeClasses = computed(() => {
   const sizes: Record<string, string> = {
-    sm: 'text-[10px] px-2 py-1',
-    md: 'text-xs px-4 py-2',
-    lg: 'text-sm px-6 py-3'
+    sm: 'text-sm px-4 py-2',
+    md: 'text-base px-6 py-3',
+    lg: 'text-base px-6 py-4'
   }
   return sizes[props.size]
 })
 </script>
-
-<style scoped>
-.pixel-btn {
-  image-rendering: pixelated;
-}
-</style>
-
-
-
-
-
-
-
-
-

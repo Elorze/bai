@@ -1,28 +1,24 @@
 <template>
   <div class="space-y-8">
     <!-- 如果没有选择社区，显示提示 -->
-    <div v-if="!communityStore.currentCommunityId" class="text-center py-12 bg-white border-2 border-black p-4">
-      <p class="font-vt323 text-lg text-gray-600 mb-4">请先选择一个社区</p>
-      <p class="font-pixel text-sm text-gray-500">点击顶部按钮切换社区频道</p>
+    <div v-if="!communityStore.currentCommunityId" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
+      <p class="text-lg text-text-body mb-4">请先选择一个社区</p>
+      <p class="text-sm text-text-placeholder">点击顶部按钮切换社区频道</p>
     </div>
 
     <!-- 社区面板内容 -->
     <div v-else>
-      <!-- Village Header -->
+      <!-- Village Header / Banner -->
       <div 
-        class="relative h-48 md:h-64 w-full bg-mario-sky overflow-hidden border-4 border-black shadow-pixel cursor-pointer hover:opacity-90 transition-opacity"
+        class="relative h-48 md:h-64 w-full overflow-hidden rounded-3xl shadow-soft cursor-pointer hover:opacity-95 transition-opacity bg-gradient-to-br from-primary to-accent"
         @click="isIntroExpanded = !isIntroExpanded"
       >
-        <!-- Parallax Background Layers (Simulated) -->
-        <div class="absolute bottom-0 w-full h-16 bg-mario-ground"></div>
-        <div class="absolute bottom-16 left-10 w-20 h-20 bg-red-500 pixel-house"></div>
-        <div class="absolute bottom-16 right-20 w-24 h-24 bg-blue-500 pixel-castle"></div>
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 font-pixel text-white text-shadow-pixel text-2xl md:text-4xl uppercase text-center">
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 font-bold text-white text-2xl md:text-4xl text-center drop-shadow-md">
           {{ community?.name || '正在加载...' }}
         </div>
         <!-- 展开/收起箭头 -->
         <div 
-          class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white text-shadow-pixel transition-all duration-300 hover:scale-110"
+          class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white transition-all duration-300 hover:scale-110"
           :class="{ 'rotate-180': isIntroExpanded }"
         >
           <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -33,9 +29,9 @@
 
       <!-- Community Intro Card -->
       <Transition name="intro-slide">
-        <div v-show="isIntroExpanded" class="bg-white border-b-4 border-black p-6 pb-8 overflow-hidden">
-          <div class="prose font-vt323 text-lg max-w-none">
-            <h3 class="font-pixel text-sm uppercase border-b-2 border-black pb-2 mb-4">欢迎来到 {{ community?.name }}</h3>
+        <div v-show="isIntroExpanded" class="bg-card rounded-3xl shadow-soft p-6 pb-8 overflow-hidden border border-border">
+          <div class="prose text-lg max-w-none text-text-body">
+            <h3 class="text-base font-bold text-text-title border-b border-border pb-2 mb-4">欢迎来到 {{ community?.name }}</h3>
             <div class="whitespace-pre-wrap">{{ community?.markdownIntro || '正在加载...' }}</div>
           </div>
         </div>
@@ -48,14 +44,14 @@
         <div class="space-y-6">
           
           <!-- Tab Navigation -->
-          <div class="flex border-b-4 border-black">
+          <div class="flex border-b border-border gap-2">
             <button 
               v-for="tab in tabs" 
               :key="tab.id"
               @click="activeTab = tab.id"
               :class="[
-                'px-4 py-2 font-pixel text-sm transition-all border-t-4 border-x-4 border-black -mb-1 mr-2',
-                activeTab === tab.id ? 'bg-mario-red text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                'px-4 py-2 rounded-t-2xl text-sm font-medium transition-all -mb-px',
+                activeTab === tab.id ? 'bg-primary text-white' : 'bg-input-bg text-text-body hover:bg-muted'
               ]"
             >
               {{ tab.label }}
@@ -69,20 +65,18 @@
               <PixelCard>
                 <template #header>市政厅 (TOWN HALL)</template>
                 <div class="space-y-4 text-center">
-                  <div class="w-full h-24 bg-gray-100 flex items-center justify-center border-2 border-dashed border-black/20 relative overflow-hidden">
-                    <!-- Castle IMG Placeholder -->
+                  <div class="w-full h-24 bg-input-bg rounded-2xl flex items-center justify-center border border-dashed border-border relative overflow-hidden">
                     <div class="absolute inset-0 flex items-center justify-center text-6xl opacity-20">🏰</div>
                   </div>
                   
-                  <!-- Community Stats -->
-                  <div class="grid grid-cols-2 gap-2 text-left font-vt323 text-lg bg-gray-50 p-2 border border-black/10">
-                     <div>{{ community?.pointName || '总积分' }}:</div>
-                     <div class="text-right text-mario-coin font-bold">{{ community?.totalPoints || 0 }}</div>
-                     <div>成员:</div>
-                     <div class="text-right font-bold">{{ community?.memberCount || 0 }}</div>
+                  <div class="grid grid-cols-2 gap-2 text-left text-base bg-input-bg rounded-2xl p-3 border border-border">
+                     <div class="text-text-body">{{ community?.pointName || '总积分' }}:</div>
+                     <div class="text-right font-bold text-primary">{{ community?.totalPoints || 0 }}</div>
+                     <div class="text-text-body">成员:</div>
+                     <div class="text-right font-bold text-text-title">{{ community?.memberCount || 0 }}</div>
                   </div>
 
-                  <p class="text-sm text-gray-600 text-left">
+                  <p class="text-sm text-text-body text-left">
                     {{ community?.description || '菌丝网络中的一个和平村庄。' }}
                   </p>
                 </div>
@@ -100,7 +94,7 @@
                      @click="navigateTo(`/member/${member.id}`)"
                    />
                 </div>
-                <div v-if="members.length > 12" class="text-xs text-gray-500 mt-2 text-center">
+                <div v-if="members.length > 12" class="text-sm text-text-placeholder mt-2 text-center">
                   还有 {{ members.length - 12 }} 位成员...
                 </div>
               </PixelCard>
@@ -109,58 +103,54 @@
 
           <!-- COMMUNITY TAB (社区圈) -->
           <div v-else-if="activeTab === 'COMMUNITY'" class="space-y-6">
-            <div v-if="!communityStore.currentCommunityId && !userCommunity" class="text-center py-12 bg-white border-2 border-black p-4">
-              <p class="font-vt323 text-lg text-gray-600 mb-2">请先选择一个社区</p>
-              <p class="font-pixel text-sm text-gray-500">点击顶部按钮切换社区频道</p>
+            <div v-if="!communityStore.currentCommunityId && !userCommunity" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
+              <p class="text-lg text-text-body mb-2">请先选择一个社区</p>
+              <p class="text-sm text-text-placeholder">点击顶部按钮切换社区频道</p>
             </div>
 
-            <div v-else-if="communityTransactions.length === 0" class="text-center py-12 bg-white border-2 border-black p-4">
-              <p class="font-vt323 text-lg text-gray-600">暂无社区动态</p>
-              <p class="font-pixel text-xs text-gray-500 mt-2">社区成员还没有交易记录</p>
+            <div v-else-if="communityTransactions.length === 0" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
+              <p class="text-lg text-text-body">暂无社区动态</p>
+              <p class="text-sm text-text-placeholder mt-2">社区成员还没有交易记录</p>
             </div>
 
             <div v-else class="space-y-4">
               <div 
                 v-for="tx in communityTransactions" 
                 :key="`${tx.userId}-${tx.id}`"
-                class="bg-white border-2 border-black p-4 hover:shadow-pixel transition-shadow"
+                class="bg-card rounded-2xl shadow-soft p-4 hover:shadow-soft-lg hover:-translate-y-0.5 transition-all"
               >
                 <div class="flex items-start gap-4">
-                  <!-- User Avatar -->
                   <PixelAvatar 
                     :seed="tx.userAvatarSeed || tx.userName" 
                     size="md"
-                    class="flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                    class="flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
                     @click="navigateTo(`/member/${tx.userId}`)"
                   />
                   
-                  <!-- Transaction Content -->
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-2">
-                      <span class="font-pixel text-sm font-bold cursor-pointer hover:text-mario-red transition-colors" @click="navigateTo(`/member/${tx.userId}`)">
+                      <span class="font-bold text-sm cursor-pointer hover:text-primary transition-colors text-text-title" @click="navigateTo(`/member/${tx.userId}`)">
                         {{ tx.userName }}
                       </span>
-                      <span class="font-vt323 text-xs text-gray-500">{{ formatTimeAgoForCommunity(tx.date) }}</span>
+                      <span class="text-xs text-text-placeholder">{{ formatTimeAgoForCommunity(tx.date) }}</span>
                     </div>
                     
                     <div class="flex items-center gap-3 mb-2">
-                      <!-- Transaction Icon -->
                       <div :class="[
-                        'w-10 h-10 border-2 border-black flex items-center justify-center text-lg shadow-pixel-sm flex-shrink-0',
-                        tx.type === 'in' ? 'bg-green-100' : 'bg-red-100'
+                        'w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0',
+                        tx.type === 'in' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
                       ]">
                         {{ tx.type === 'in' ? '⬇️' : '⬆️' }}
                       </div>
                       
-                      <!-- Transaction Info -->
                       <div class="flex-1 min-w-0">
-                        <div class="font-pixel text-sm mb-1">{{ tx.title }}</div>
-                        <div v-if="tx.taskTitle" class="font-vt323 text-xs text-gray-500 mb-1">
+                        <div class="font-medium text-sm text-text-title mb-1">{{ tx.title }}</div>
+                        <div v-if="tx.taskTitle" class="text-xs text-text-placeholder mb-1">
                           任务: {{ tx.taskTitle }}
                         </div>
                         <div :class="[
-                          'font-vt323 text-xl font-bold',
-                          tx.type === 'in' ? 'text-green-600' : 'text-red-600'
+                          'text-xl font-bold',
+                          tx.type === 'in' ? 'text-success' : 'text-destructive'
                         ]">
                           {{ tx.type === 'in' ? '+' : '-' }}{{ formatAmountForCommunity(tx.amount) }} {{ tx.currency }}
                         </div>
@@ -416,19 +406,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.pixel-house {
-  clip-path: polygon(
-    20% 40%, 80% 40%, 80% 100%, 20% 100%, 20% 40%,
-    0% 40%, 50% 0%, 100% 40%, 80% 40%
-  );
-}
-.pixel-castle {
-  clip-path: polygon(
-    0% 100%, 0% 30%, 20% 30%, 20% 0%, 40% 0%, 40% 30%, 
-    60% 30%, 60% 0%, 80% 0%, 80% 30%, 100% 30%, 100% 100%
-  );
-}
-
 /* 简介卡片展开/收起动画 */
 .intro-slide-enter-active {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);

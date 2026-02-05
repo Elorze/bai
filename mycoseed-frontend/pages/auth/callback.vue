@@ -2,14 +2,14 @@
     <div class="w-full max-w-md mx-auto">
         <PixelCard>
             <template #header>
-                <div class="text-center font-pixel text-xl text-mario-red">登录中...</div>
+                <div class="text-center text-xl font-bold text-primary">登录中...</div>
             </template>
 
             <div class="flex flex-col gap-6 py-4 items-center">
-                <div v-if="loading" class="text-center font-vt323 text-lg">
+                <div v-if="loading" class="text-center text-lg text-text-body">
                     正在处理登录...
                 </div>
-                <div v-if="error" class="text-center font-vt323 text-lg text-mario-red">
+                <div v-if="error" class="text-center text-lg text-destructive">
                     {{ error }}
                 </div>
             </div>
@@ -23,8 +23,6 @@ import { useRouter } from 'vue-router'
 import { useToast } from '~/composables/useToast'
 import { useUserStore } from '~/stores/user'
 import { parseFragment, getSemiUserInfo, syncFromSemi } from '~/utils/api'
-import PixelCard from '~/components/pixel/PixelCard.vue'
-
 definePageMeta({
   layout: 'unauth',
   // 移除 ssr: false，确保路由在构建时被正确注册

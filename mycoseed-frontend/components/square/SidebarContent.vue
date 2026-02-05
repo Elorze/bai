@@ -2,31 +2,28 @@
   <div class="flex flex-col gap-6">
     <!-- Search Section -->
     <div>
-      <h3 class="text-sm font-bold mb-3 flex items-center border-b-2 border-black pb-1">
+      <label class="block text-base font-bold text-text-body mb-2">
         <span class="mr-2">🔍</span> 筛选社区
-      </h3>
-      <div class="space-y-3">
-        <input 
-          :value="searchQuery"
-          @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-          type="text" 
-          placeholder="搜索社区名称..." 
-          class="w-full px-3 py-2 border-2 border-black text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 font-pixel shadow-pixel-sm"
-        />
-      </div>
+      </label>
+      <input 
+        :value="searchQuery"
+        @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+        type="text" 
+        placeholder="搜索社区名称..." 
+        class="w-full px-6 py-4 bg-input-bg rounded-2xl text-base font-medium text-text-title placeholder-text-placeholder focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 transition-all"
+      />
     </div>
 
-    <!-- Community List Section (by location & search) -->
+    <!-- Community List Section -->
     <div>
-      <h3 class="text-sm font-bold mb-3 flex items-center text-yellow-800 border-b-2 border-black pb-1 bg-yellow-100 px-1">
+      <h3 class="text-base font-bold text-text-body mb-3 flex items-center border-b border-border pb-2">
         <span class="mr-2">🗺</span> 按地域推荐社区
       </h3>
-      <!-- Location Selector -->
       <div class="mb-3">
         <select 
           :value="selectedLocation" 
           @change="$emit('update:selectedLocation', ($event.target as HTMLSelectElement).value)"
-          class="w-full px-3 py-2 border-2 border-black text-sm bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 font-pixel shadow-pixel-sm"
+          class="w-full px-6 py-4 bg-input-bg rounded-2xl text-base font-medium text-text-title focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 border-0"
         >
           <option value="">🌍 全部地区</option>
           <option v-for="loc in locations" :key="loc" :value="loc">{{ loc }}</option>
@@ -36,7 +33,7 @@
         <div
           v-for="comm in communities"
           :key="comm.id"
-          class="flex items-center justify-between text-xs p-3 bg-white border-2 border-black cursor-pointer hover:-translate-y-1 hover:shadow-pixel-sm transition-all active:translate-y-0 active:shadow-none"
+          class="flex items-center justify-between p-3 bg-card rounded-2xl shadow-soft cursor-pointer hover:shadow-soft-lg hover:-translate-y-0.5 transition-all"
           tabindex="0"
           @click="$emit('select-community', comm.id)"
           @mouseenter="$emit('preview-community', comm.id)"
@@ -45,43 +42,43 @@
           @blur="$emit('clear-preview')"
         >
           <div class="flex flex-col gap-0.5 max-w-[140px]">
-            <span class="font-bold truncate">{{ comm.name }}</span>
-            <span class="text-[10px] text-gray-500 truncate">
+            <span class="font-bold text-text-title truncate">{{ comm.name }}</span>
+            <span class="text-sm text-text-placeholder truncate">
               {{ comm.location || '位置待补充' }}
             </span>
           </div>
-          <div class="text-right text-[10px] text-gray-700 font-vt323 leading-tight">
+          <div class="text-right text-sm text-text-body leading-tight">
             <div>{{ formatNumber(comm.memberCount) }} 人</div>
             <div>{{ formatNumber(comm.totalPoints) }} pts</div>
           </div>
         </div>
       </div>
-      <div v-else class="text-xs text-gray-400 bg-gray-50 border-2 border-dashed border-gray-300 p-3">
+      <div v-else class="text-sm text-text-placeholder bg-input-bg rounded-2xl p-4 border border-dashed border-border">
         暂无符合条件的社区
       </div>
     </div>
 
     <!-- Live Feed Section -->
     <div>
-      <h3 class="text-sm font-bold mb-3 flex items-center text-green-800 border-b-2 border-black pb-1 bg-green-100 px-1">
+      <h3 class="text-base font-bold text-text-body mb-3 flex items-center border-b border-border pb-2">
         <span class="mr-2">⚡</span> 实时动态
       </h3>
-      <div class="h-48 overflow-hidden relative bg-gray-50 border-2 border-black p-2">
+      <div class="h-48 overflow-hidden relative bg-input-bg rounded-2xl p-4">
         <div class="space-y-2">
           <div 
             v-for="log in activityLogs" 
             :key="log.id" 
-            class="text-xs flex flex-col border-b border-gray-200 pb-2 mb-1 last:border-0 cursor-pointer hover:bg-green-50 transition-colors"
+            class="text-sm flex flex-col border-b border-border pb-2 mb-1 last:border-0 cursor-pointer hover:bg-card/50 rounded-lg px-2 py-1 transition-colors"
             @click="$emit('activity-click', log)"
           >
             <div class="flex items-center gap-1 mb-1 justify-between">
               <div class="flex items-center gap-1 flex-wrap">
-                <span class="font-bold text-blue-700">{{ log.userName || '有人' }}</span>
-                <span class="text-gray-600 scale-90 origin-left">{{ getActionText(log.type) }}</span>
+                <span class="font-bold text-primary">{{ log.userName || '有人' }}</span>
+                <span class="text-text-body">{{ getActionText(log.type) }}</span>
               </div>
-              <span class="text-gray-400 text-[10px] font-vt323">{{ formatTime(log.timestamp) }}</span>
+              <span class="text-text-placeholder text-xs">{{ formatTime(log.timestamp) }}</span>
             </div>
-            <div class="text-gray-800 truncate pl-2 border-l-2 border-green-400 bg-green-50 p-1">
+            <div class="text-text-title truncate pl-2 border-l-2 border-primary/30 bg-primary/5 rounded px-2 py-1">
               {{ log.targetName }}
             </div>
           </div>
@@ -124,7 +121,7 @@ const formatNumber = (num: number) => {
 const formatTime = (isoString: string) => {
   const date = new Date(isoString)
   const now = new Date()
-  const diff = (now.getTime() - date.getTime()) / 1000 / 60 // minutes
+  const diff = (now.getTime() - date.getTime()) / 1000 / 60
   
   if (diff < 1) return '刚刚'
   if (diff < 60) return `${Math.floor(diff)}m`
@@ -132,17 +129,3 @@ const formatTime = (isoString: string) => {
   return `${Math.floor(diff / 60 / 24)}d`
 }
 </script>
-
-<style scoped>
-.shadow-pixel-sm {
-  box-shadow: 2px 2px 0 rgba(0,0,0,1);
-}
-</style>
-
-
-
-
-
-
-
-

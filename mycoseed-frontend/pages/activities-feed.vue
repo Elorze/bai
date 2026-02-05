@@ -2,26 +2,26 @@
   <div class="space-y-6 pb-24">
     <!-- 发起活动按钮 -->
     <div v-if="isAuthenticated" class="flex justify-end gap-2">
-      <button
+      <PixelButton
+        variant="primary"
         @click="navigateTo('/activities/create')"
-        class="create-activity-btn relative px-4 py-2.5 font-pixel text-xs uppercase"
       >
-        <span class="relative z-10 flex items-center gap-1.5 whitespace-nowrap">
+        <span class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="text-base">📅</span>
-          <span class="font-bold">发起活动</span>
+          <span>发起活动</span>
         </span>
-      </button>
+      </PixelButton>
     </div>
 
     <!-- 页面标题 -->
-    <div class="bg-white border-2 border-black p-4 shadow-pixel-sm">
-      <h1 class="font-pixel text-xl uppercase">活动列表</h1>
-      <p class="font-vt323 text-sm text-gray-600 mt-1">当前活动: {{ activeEventsCount }}</p>
+    <div class="bg-card rounded-2xl shadow-soft p-4 border border-border">
+      <h1 class="text-xl font-bold text-text-title">活动列表</h1>
+      <p class="text-sm text-text-body mt-1">当前活动: {{ activeEventsCount }}</p>
     </div>
 
     <!-- 活动列表 -->
     <div v-if="events.length === 0" class="text-center py-12 bg-white border-2 border-black p-4">
-      <p class="font-vt323 text-lg text-gray-600">暂无活动</p>
+      <p class="text-lg text-text-body">暂无活动</p>
     </div>
     
     <div v-else class="grid gap-4">
@@ -34,26 +34,26 @@
       >
         <template #header>
           <div class="flex justify-between items-start">
-            <span class="text-gray-600 text-xs">活动 #{{ event.id }}</span>
-            <span class="text-xs text-gray-400">{{ formatTimeAgo(event.createdAt) }}</span>
+            <span class="text-text-body text-xs">活动 #{{ event.id }}</span>
+            <span class="text-xs text-text-placeholder">{{ formatTimeAgo(event.createdAt) }}</span>
           </div>
         </template>
         
         <div class="flex gap-4">
-          <div class="w-20 h-20 bg-black/10 flex items-center justify-center text-4xl border-2 border-black flex-shrink-0">
+          <div class="w-20 h-20 bg-black/10 flex items-center justify-center text-4xl rounded-2xl border border-border flex-shrink-0 bg-input-bg">
             📅
           </div>
           <div class="flex-1 min-w-0">
-            <div class="font-pixel text-xs text-mario-red mb-1">{{ event.date }}</div>
-            <h3 class="font-bold text-xl font-vt323 mb-2">{{ event.title }}</h3>
-            <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ event.description }}</p>
+            <div class="text-xs font-bold text-primary mb-1">{{ event.date }}</div>
+            <h3 class="font-bold text-xl mb-2">{{ event.title }}</h3>
+            <p class="text-sm text-text-body mb-2 line-clamp-2">{{ event.description }}</p>
             <div class="flex gap-2 flex-wrap">
               <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 border border-green-600">
                 {{ event.participants }} 人已报名
               </span>
               <span 
                 :class="[
-                  'text-xs px-2 py-0.5 border font-pixel uppercase',
+                  'text-xs px-2 py-0.5 border font-medium',
                   event.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 border-yellow-600' :
                   event.status === 'ongoing' ? 'bg-blue-100 text-blue-800 border-blue-600' :
                   'bg-gray-100 text-gray-800 border-gray-600'

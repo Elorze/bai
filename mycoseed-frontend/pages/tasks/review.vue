@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-mario-sky py-4 md:py-8">
+  <div class="min-h-screen bg-background py-4 md:py-8">
     <div class="container mx-auto px-4 md:px-6 max-w-4xl">
       <!-- 返回按钮 -->
       <div class="mb-6">
@@ -14,7 +14,7 @@
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div class="font-pixel text-lg text-white text-shadow-pixel animate-pulse">加载中...</div>
+        <div class="text-lg text-text-body animate-pulse">加载中...</div>
       </div>
 
       <!-- 审核表单 -->
@@ -24,65 +24,65 @@
             审核任务
           </template>
           
-          <p v-if="canReview" class="font-vt323 text-lg text-black mb-6">请仔细审核任务完成情况，并给出审核结果</p>
+          <p v-if="canReview" class=" text-lg text-black mb-6">请仔细审核任务完成情况，并给出审核结果</p>
           
           <!-- 只读模式提示 -->
-          <div v-if="!canReview" class="bg-mario-yellow/20 border-2 border-mario-yellow shadow-pixel-sm p-4 mb-6">
-            <p class="font-vt323 text-base text-black">
-              <span class="font-pixel text-xs">⚠️</span> 您不是任务创建者，无法进行审核操作
+          <div v-if="!canReview" class="bg-warning/20 border-2 border-warning shadow-soft p-4 mb-6">
+            <p class=" text-base text-black">
+              <span class="font-bold text-xs">⚠️</span> 您不是任务创建者，无法进行审核操作
             </p>
           </div>
           
           <form @submit.prevent="submitReview" class="space-y-6">
             <!-- 任务信息 -->
-            <div class="bg-white border-2 border-black shadow-pixel-sm p-4">
-              <h3 class="font-pixel text-xs uppercase text-black mb-2">{{ task.title }}</h3>
-              <p class="font-vt323 text-base text-black mb-3">{{ task.description }}</p>
+            <div class="bg-card border border-border rounded-2xl shadow-soft p-4">
+              <h3 class="font-bold text-xs uppercase text-black mb-2">{{ task.title }}</h3>
+              <p class=" text-base text-black mb-3">{{ task.description }}</p>
               <div class="flex items-center gap-3 flex-wrap">
-                <span class="px-3 py-1.5 bg-mario-coin text-white border-2 border-black shadow-pixel-sm font-pixel text-[10px] uppercase">
+                <span class="px-3 py-1.5 bg-primary text-white border border-border rounded-2xl shadow-soft font-bold text-[10px] uppercase">
                   {{ task.reward }} {{ taskRewardSymbol }}
                 </span>
                 <div class="flex flex-col gap-1">
-                  <span class="font-vt323 text-sm text-black">领取截止: {{ formatDate(task.deadline) }}</span>
-                  <span class="font-vt323 text-sm text-black">提交截止: {{ formatDate(task.submitDeadline || task.deadline) }}</span>
+                  <span class=" text-sm text-black">领取截止: {{ formatDate(task.deadline) }}</span>
+                  <span class=" text-sm text-black">提交截止: {{ formatDate(task.submitDeadline || task.deadline) }}</span>
                 </div>
               </div>
             </div>
 
             <!-- 提交者信息 -->
-            <div class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">提交者信息</h3>
-              <div class="bg-white border-2 border-black shadow-pixel-sm p-4">
+            <div class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-black mb-4">提交者信息</h3>
+              <div class="bg-card border border-border rounded-2xl shadow-soft p-4">
                 <div class="flex items-center gap-3 mb-3">
-                  <div class="w-12 h-12 bg-mario-red border-2 border-black flex items-center justify-center font-pixel text-lg text-white">
+                  <div class="w-12 h-12 bg-destructive border border-border rounded-2xl flex items-center justify-center font-bold text-lg text-white">
                     {{ submission.submitter.name.charAt(0).toUpperCase() }}
                   </div>
                   <div>
-                    <h4 class="font-pixel text-xs uppercase text-black">{{ submission.submitter.name.toUpperCase() }}</h4>
-                    <p class="font-vt323 text-sm text-black/70">{{ submission.submitter.role }}</p>
+                    <h4 class="font-bold text-xs uppercase text-black">{{ submission.submitter.name.toUpperCase() }}</h4>
+                    <p class=" text-sm text-black/70">{{ submission.submitter.role }}</p>
                   </div>
                 </div>
-                <div class="font-vt323 text-sm text-black space-y-1 pt-3 border-t border-black/10">
+                <div class=" text-sm text-black space-y-1 pt-3 border-t border-border">
                   <p><span class="font-medium">提交时间:</span> {{ formatDate(submission.timestamp) }}</p>
                 </div>
               </div>
             </div>
 
             <!-- 提交内容（按顺序：图片 → 位置信息 → 文字说明） -->
-            <div class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">提交内容</h3>
+            <div class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-black mb-4">提交内容</h3>
               
               <!-- 1. 图片文件（优先显示）- 响应式设计：手机端2列，平板3列，电脑端4列 -->
               <div v-if="submission.files && submission.files.length > 0" class="mb-4">
-                <h4 class="font-pixel text-[10px] uppercase text-black mb-3">提交图片</h4>
+                <h4 class="font-bold text-[10px] uppercase text-black mb-3">提交图片</h4>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <div
                     v-for="(file, index) in submission.files"
                       :key="index"
-                    class="bg-white border-2 border-black shadow-pixel-sm p-3 relative group"
+                    class="bg-card border border-border rounded-2xl shadow-soft p-3 relative group"
                     >
                     <!-- 图片预览 -->
-                    <div class="aspect-square bg-gray-100 border border-black mb-2 overflow-hidden">
+                    <div class="aspect-square bg-gray-100 border border-border mb-2 overflow-hidden">
                       <img 
                         :src="file.url" 
                         :alt="file.name"
@@ -91,7 +91,7 @@
                       />
                         </div>
                     <!-- 文件信息 - 名称显示已关闭 -->
-                    <!-- <div class="font-vt323 text-xs text-black mb-2">
+                    <!-- <div class=" text-xs text-black mb-2">
                       <div class="font-medium truncate">{{ file.name }}</div>
                       <div class="text-black/60">({{ formatFileSize(file.size) }})</div>
                         </div> -->
@@ -120,13 +120,13 @@
 
               <!-- 2. 位置信息（经纬度） -->
               <div v-if="submission.gpsLocation" class="mb-4">
-                <h4 class="font-pixel text-[10px] uppercase text-black mb-3">位置信息</h4>
-                <div class="bg-white border-2 border-black shadow-pixel-sm p-4">
+                <h4 class="font-bold text-[10px] uppercase text-black mb-3">位置信息</h4>
+                <div class="bg-card border border-border rounded-2xl shadow-soft p-4">
                 <div class="flex items-center gap-2 mb-3">
                   <span class="text-2xl">📍</span>
-                    <span class="font-pixel text-xs uppercase text-black">GPS定位</span>
+                    <span class="font-bold text-xs uppercase text-black">GPS定位</span>
                 </div>
-                <div class="font-vt323 text-sm text-black space-y-1">
+                <div class=" text-sm text-black space-y-1">
                     <div><span class="font-medium">纬度:</span> {{ submission.gpsLocation.latitude.toFixed(6) }}</div>
                     <div><span class="font-medium">经度:</span> {{ submission.gpsLocation.longitude.toFixed(6) }}</div>
                     <div v-if="submission.gpsLocation.accuracy" class="text-black/60">
@@ -141,25 +141,25 @@
 
               <!-- 3. 文字说明 -->
               <div v-if="submission.description && submission.description.trim()">
-                <h4 class="font-pixel text-[10px] uppercase text-black mb-3">文字说明</h4>
-                <div class="bg-white border-2 border-black shadow-pixel-sm p-4">
-                  <p class="font-vt323 text-base text-black whitespace-pre-wrap">{{ submission.description }}</p>
+                <h4 class="font-bold text-[10px] uppercase text-black mb-3">文字说明</h4>
+                <div class="bg-card border border-border rounded-2xl shadow-soft p-4">
+                  <p class=" text-base text-black whitespace-pre-wrap">{{ submission.description }}</p>
                 </div>
               </div>
 
               <!-- 空状态 -->
-              <div v-if="!submission.files?.length && !submission.gpsLocation && !submission.description" class="bg-gray-50 border-2 border-dashed border-black/30 p-4 text-center">
-                <p class="font-vt323 text-sm text-black/60">未提交任何内容</p>
+              <div v-if="!submission.files?.length && !submission.gpsLocation && !submission.description" class="bg-gray-50 border border-dashed border-border p-4 text-center">
+                <p class=" text-sm text-black/60">未提交任何内容</p>
               </div>
             </div>
 
             <!-- 审核结果 -->
-            <div class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">审核结果</h3>
+            <div class="pt-4 border-t border-border">
+              <h3 class="font-bold text-xs uppercase text-black mb-4">审核结果</h3>
               <div class="space-y-4">
                 <div>
-                  <label class="block font-pixel text-[10px] uppercase text-black mb-2">
-                    审核决定 <span class="text-mario-red">*</span>
+                  <label class="block font-bold text-[10px] uppercase text-black mb-2">
+                    审核决定 <span class="text-destructive">*</span>
                   </label>
                   <div class="flex gap-4">
                     <label class="flex items-center gap-2 cursor-pointer">
@@ -167,33 +167,33 @@
                         v-model="reviewResult.decision"
                         type="radio"
                         value="approved"
-                        class="w-4 h-4 border-2 border-black accent-mario-green"
+                        class="w-4 h-4 border border-border rounded-2xl accent-primary"
                         :disabled="!canReview"
                       />
-                      <span class="font-vt323 text-base text-black">通过</span>
+                      <span class=" text-base text-black">通过</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input
                         v-model="reviewResult.decision"
                         type="radio"
                         value="rejected"
-                        class="w-4 h-4 border-2 border-black accent-mario-red"
+                        class="w-4 h-4 border border-border rounded-2xl accent-destructive"
                         :disabled="!canReview"
                       />
-                      <span class="font-vt323 text-base text-black">拒绝</span>
+                      <span class=" text-base text-black">拒绝</span>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block font-pixel text-xs uppercase text-black mb-2">
-                    审核意见 <span class="text-mario-red">*</span>
+                  <label class="block font-bold text-xs uppercase text-black mb-2">
+                    审核意见 <span class="text-destructive">*</span>
                   </label>
                   <textarea
                     v-model="reviewResult.comments"
                     placeholder="请详细说明审核意见，包括优点、不足和改进建议..."
                     rows="6"
-                    class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base text-black focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                    class="w-full px-4 py-3 bg-card border border-border rounded-2xl shadow-soft  text-base text-black focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                     :disabled="!canReview"
                     :readonly="!canReview"
                   />
@@ -202,7 +202,7 @@
             </div>
 
             <!-- 提交按钮 -->
-            <div v-if="canReview && (!currentSubmission || currentSubmission.status !== 'completed')" class="flex gap-4 pt-6 border-t-2 border-black/20">
+            <div v-if="canReview && (!currentSubmission || currentSubmission.status !== 'completed')" class="flex gap-4 pt-6 border-t border-border">
               <PixelButton
                 @click="navigateTo(`/tasks/${taskId}`)"
                 variant="secondary"
@@ -223,20 +223,20 @@
             </div>
             
             <!-- 审核成功后的转账按钮 -->
-            <div v-if="canReview && currentSubmission && currentSubmission.status === 'completed'" class="pt-6 border-t-2 border-black/20">
-              <div class="bg-mario-green/20 border-2 border-mario-green shadow-pixel-sm p-4 mb-4">
-                <p class="font-vt323 text-base text-black mb-2">
-                  <span class="font-pixel text-xs">✅</span> 审核已通过！
+            <div v-if="canReview && currentSubmission && currentSubmission.status === 'completed'" class="pt-6 border-t border-border">
+              <div class="bg-success/20 border border-success shadow-soft p-4 mb-4">
+                <p class=" text-base text-black mb-2">
+                  <span class="font-bold text-xs">✅</span> 审核已通过！
                 </p>
-                <p class="font-vt323 text-sm text-black/70 mb-2">
+                <p class=" text-sm text-black/70 mb-2">
                   奖励金额：{{ transferData?.reward || 0 }} {{ taskRewardSymbol }}
                 </p>
                 <!-- 转账状态显示 -->
-                <p v-if="(currentSubmission as any).transferredAt" class="font-vt323 text-sm text-mario-green">
-                  <span class="font-pixel text-xs">✓</span> 已转账（{{ formatBeijingTime((currentSubmission as any).transferredAt) }}）
+                <p v-if="(currentSubmission as any).transferredAt" class=" text-sm text-primary">
+                  <span class="font-bold text-xs">✓</span> 已转账（{{ formatBeijingTime((currentSubmission as any).transferredAt) }}）
                 </p>
-                <p v-else class="font-vt323 text-sm text-mario-yellow">
-                  <span class="font-pixel text-xs">⚠</span> 待转账
+                <p v-else class=" text-sm text-warning">
+                  <span class="font-bold text-xs">⚠</span> 待转账
                 </p>
               </div>
               <!-- 如果未转账，显示转账按钮和标记按钮 -->
@@ -275,7 +275,7 @@
             </div>
             
             <!-- 只读模式返回按钮 -->
-            <div v-else class="flex gap-4 pt-6 border-t-2 border-black/20">
+            <div v-else class="flex gap-4 pt-6 border-t border-border">
               <PixelButton
                 @click="navigateTo(`/tasks/${taskId}`)"
                 variant="secondary"
@@ -297,62 +297,62 @@
       @click="showRejectModal = false"
     >
       <div
-        class="bg-white border-2 border-black shadow-pixel-lg max-w-lg w-full"
+        class="bg-card border border-border rounded-2xl shadow-soft-lg max-w-lg w-full"
         @click.stop
       >
         <div class="p-6">
-          <h3 class="font-pixel text-sm uppercase text-black mb-4">选择拒绝选项</h3>
+          <h3 class="font-bold text-sm uppercase text-black mb-4">选择拒绝选项</h3>
           
           <div class="space-y-4 mb-6">
             <!-- 重新提交证明 -->
-            <label class="block p-4 bg-gray-50 border-2 border-black shadow-pixel-sm cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-mario-green/20 border-mario-green': rejectOption === 'resubmit' }">
+            <label class="block p-4 bg-gray-50 border border-border rounded-2xl shadow-soft cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-primary/20 border-primary': rejectOption === 'resubmit' }">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="text-xl">🔄</span>
-                  <span class="font-vt323 text-base text-black">重新提交证明</span>
+                  <span class=" text-base text-black">重新提交证明</span>
                 </div>
                 <div class="relative inline-flex items-center">
                   <input 
                     type="radio" 
                     v-model="rejectOption"
                     value="resubmit"
-                    class="w-4 h-4 border-2 border-black accent-mario-green"
+                    class="w-4 h-4 border border-border rounded-2xl accent-primary"
                   />
                 </div>
               </div>
             </label>
 
             <!-- 重新发布任务 -->
-            <label class="block p-4 bg-gray-50 border-2 border-black shadow-pixel-sm cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-mario-green/20 border-mario-green': rejectOption === 'reclaim' }">
+            <label class="block p-4 bg-gray-50 border border-border rounded-2xl shadow-soft cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-primary/20 border-primary': rejectOption === 'reclaim' }">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="text-xl">📋</span>
-                  <span class="font-vt323 text-base text-black">重新发布任务</span>
+                  <span class=" text-base text-black">重新发布任务</span>
                 </div>
                 <div class="relative inline-flex items-center">
                   <input 
                     type="radio" 
                     v-model="rejectOption"
                     value="reclaim"
-                    class="w-4 h-4 border-2 border-black accent-mario-green"
+                    class="w-4 h-4 border border-border rounded-2xl accent-primary"
                   />
                 </div>
               </div>
             </label>
 
             <!-- 结束任务 -->
-            <label class="block p-4 bg-gray-50 border-2 border-black shadow-pixel-sm cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-mario-red/20 border-mario-red': rejectOption === 'end' }">
+            <label class="block p-4 bg-gray-50 border border-border rounded-2xl shadow-soft cursor-pointer hover:bg-gray-100 transition-colors" :class="{ 'bg-destructive/20 border-destructive': rejectOption === 'end' }">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="text-xl">❌</span>
-                  <span class="font-vt323 text-base text-black">结束任务</span>
+                  <span class=" text-base text-black">结束任务</span>
                 </div>
                 <div class="relative inline-flex items-center">
                   <input 
                     type="radio" 
                     v-model="rejectOption"
                     value="end"
-                    class="w-4 h-4 border-2 border-black accent-mario-red"
+                    class="w-4 h-4 border border-border rounded-2xl accent-destructive"
                   />
                 </div>
               </div>
@@ -360,14 +360,14 @@
           </div>
 
           <div class="mb-6">
-            <label class="block font-pixel text-xs uppercase text-black mb-2">
-              审核意见 <span class="text-mario-red">*</span>
+            <label class="block font-bold text-xs uppercase text-black mb-2">
+              审核意见 <span class="text-destructive">*</span>
             </label>
             <textarea
               v-model="reviewResult.comments"
               placeholder="请详细说明审核意见..."
               rows="4"
-              class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base text-black focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+              class="w-full px-4 py-3 bg-card border border-border rounded-2xl shadow-soft  text-base text-black focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             />
           </div>
 
@@ -401,17 +401,17 @@
       @click="showTransferModal = false"
     >
       <div
-        class="bg-white border-2 border-black shadow-pixel-lg max-w-lg w-full"
+        class="bg-card border border-border rounded-2xl shadow-soft-lg max-w-lg w-full"
         @click.stop
       >
         <div class="p-6">
-          <h3 class="font-pixel text-sm uppercase text-black mb-4">转账确认</h3>
+          <h3 class="font-bold text-sm uppercase text-black mb-4">转账确认</h3>
           
-          <div class="bg-mario-green/20 border-2 border-mario-green shadow-pixel-sm p-4 mb-6">
-            <p class="font-vt323 text-base text-black mb-2">
-              <span class="font-pixel text-xs">💸</span> 是否已完成转账？
+          <div class="bg-success/20 border border-success shadow-soft p-4 mb-6">
+            <p class=" text-base text-black mb-2">
+              <span class="font-bold text-xs">💸</span> 是否已完成转账？
             </p>
-            <div class="font-vt323 text-sm text-black/70 space-y-1">
+            <div class=" text-sm text-black/70 space-y-1">
               <p>接收方：{{ currentSubmission?.submitter.name }}</p>
               <p>转账金额：{{ transferData?.reward || 0 }} {{ taskRewardSymbol }}</p>
             </div>

@@ -2,19 +2,19 @@
   <div class="space-y-8">
     <!-- Village Header -->
     <div 
-      class="relative h-48 md:h-64 w-full bg-mario-sky overflow-hidden border-4 border-black shadow-pixel cursor-pointer hover:opacity-90 transition-opacity"
+      class="relative h-48 md:h-64 w-full bg-gradient-to-br from-primary to-accent overflow-hidden rounded-3xl shadow-soft border border-border cursor-pointer hover:opacity-90 transition-opacity"
       @click="isIntroExpanded = !isIntroExpanded"
     >
       <!-- Parallax Background Layers (Simulated) -->
-      <div class="absolute bottom-0 w-full h-16 bg-mario-ground"></div>
+      <div class="absolute bottom-0 w-full h-16 bg-primary/30"></div>
       <div class="absolute bottom-16 left-10 w-20 h-20 bg-red-500 pixel-house"></div>
       <div class="absolute bottom-16 right-20 w-24 h-24 bg-blue-500 pixel-castle"></div>
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 font-pixel text-white text-shadow-pixel text-2xl md:text-4xl uppercase text-center">
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 font-bold text-white drop-shadow-md text-2xl md:text-4xl uppercase text-center">
         {{ community?.name || '正在加载...' }}
       </div>
       <!-- 展开/收起箭头 -->
       <div 
-        class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white text-shadow-pixel transition-all duration-300 hover:scale-110"
+        class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white drop-shadow-md transition-all duration-300 hover:scale-110"
         :class="{ 'rotate-180': isIntroExpanded }"
       >
         <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -26,8 +26,8 @@
     <!-- Community Intro Card -->
     <Transition name="intro-slide">
       <div v-show="isIntroExpanded" class="bg-white border-b-4 border-black p-6 pb-8 overflow-hidden">
-        <div class="prose font-vt323 text-lg max-w-none">
-          <h3 class="font-pixel text-sm uppercase border-b-2 border-black pb-2 mb-4">欢迎来到 {{ community?.name }}</h3>
+        <div class="prose  text-lg max-w-none">
+          <h3 class="font-bold text-sm uppercase border-b-2 border-black pb-2 mb-4">欢迎来到 {{ community?.name }}</h3>
           <div class="whitespace-pre-wrap">{{ community?.markdownIntro || '正在加载...' }}</div>
         </div>
       </div>
@@ -46,8 +46,8 @@
             :key="tab.id"
             @click="activeTab = tab.id"
             :class="[
-              'px-4 py-2 font-pixel text-sm transition-all border-t-4 border-x-4 border-black -mb-1 mr-2',
-              activeTab === tab.id ? 'bg-mario-red text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+              'px-4 py-2 font-bold text-sm transition-all border-t-4 border-x-4 border-black -mb-1 mr-2',
+              activeTab === tab.id ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
             ]"
           >
             {{ tab.label }}
@@ -56,12 +56,12 @@
 
         <!-- QUESTS TAB -->
         <div v-if="activeTab === 'QUESTS'" class="space-y-6">
-          <div class="flex items-center justify-between bg-white border-2 border-black p-2">
-            <div class="font-pixel text-sm">当前任务: {{ activeTasksCount }} | 当前活动: {{ activeEventsCount }}</div>
+          <div class="flex items-center justify-between bg-white border border-border rounded-2xl p-2">
+            <div class="font-bold text-sm">当前任务: {{ activeTasksCount }} | 当前活动: {{ activeEventsCount }}</div>
           </div>
 
-          <div v-if="mergedItems.length === 0" class="text-center py-12 bg-white border-2 border-black p-4">
-            <p class="font-vt323 text-lg text-gray-600">暂无任务和活动</p>
+          <div v-if="mergedItems.length === 0" class="text-center py-12 bg-white border border-border rounded-2xl p-4">
+            <p class=" text-lg text-gray-600">暂无任务和活动</p>
           </div>
           
           <div v-else class="grid gap-4">
@@ -91,11 +91,11 @@
                 <template #footer>
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                      <div class="text-mario-coin font-bold flex items-center gap-1">
-                        <div class="w-3 h-3 bg-mario-coin rounded-sm"></div>
+                      <div class="text-primary font-bold flex items-center gap-1">
+                        <div class="w-3 h-3 bg-primary rounded-sm"></div>
                         {{ item.data.reward }} 积分
                       </div>
-                      <span class="text-xs bg-gray-200 px-2 py-1 font-pixel uppercase">{{ getStatusLabel(item.data.status) }}</span>
+                      <span class="text-xs bg-gray-200 px-2 py-1 font-bold uppercase">{{ getStatusLabel(item.data.status) }}</span>
                     </div>
                     <PixelButton 
                       v-if="item.data.status === 'unclaimed'"
@@ -119,12 +119,12 @@
                 </template>
                 
                 <div class="flex gap-4">
-                  <div class="w-20 h-20 bg-black/10 flex items-center justify-center text-4xl border-2 border-black">
+                  <div class="w-20 h-20 bg-black/10 flex items-center justify-center text-4xl border border-border rounded-2xl">
                     📅
                   </div>
                   <div class="flex-1">
-                    <div class="font-pixel text-xs text-mario-red mb-1">{{ item.data.date }}</div>
-                    <h3 class="font-bold text-xl font-vt323">{{ item.data.title }}</h3>
+                    <div class="font-bold text-xs text-primary mb-1">{{ item.data.date }}</div>
+                    <h3 class="font-bold text-xl ">{{ item.data.title }}</h3>
                     <p class="text-sm text-gray-600 mt-1">{{ item.data.description }}</p>
                     <div class="mt-2 flex gap-2">
                       <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 border border-green-600">
@@ -154,9 +154,9 @@
                 </div>
                 
                 <!-- Community Stats -->
-                <div class="grid grid-cols-2 gap-2 text-left font-vt323 text-lg bg-gray-50 p-2 border border-black/10">
+                <div class="grid grid-cols-2 gap-2 text-left  text-lg bg-gray-50 p-2 border border-black/10">
                    <div>{{ community?.pointName || '总积分' }}:</div>
-                   <div class="text-right text-mario-coin font-bold">{{ community?.totalPoints || 0 }}</div>
+                   <div class="text-right text-primary font-bold">{{ community?.totalPoints || 0 }}</div>
                    <div>成员:</div>
                    <div class="text-right font-bold">{{ community?.memberCount || 0 }}</div>
                 </div>

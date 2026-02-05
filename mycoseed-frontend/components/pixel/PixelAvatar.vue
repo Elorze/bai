@@ -1,16 +1,15 @@
 <template>
   <div 
-    class="pixel-avatar relative overflow-hidden border-2 border-black bg-white"
+    class="relative overflow-hidden rounded-full bg-input-bg shadow-soft"
     :class="sizeClasses"
   >
     <img 
       v-if="src" 
       :src="src" 
       alt="Avatar"
-      class="w-full h-full object-cover image-pixelated"
+      class="w-full h-full object-cover"
     />
-    <div v-else class="w-full h-full grid grid-cols-4 grid-rows-4">
-      <!-- Simple generated pattern fallback -->
+    <div v-else class="w-full h-full grid grid-cols-4 grid-rows-4 rounded-full overflow-hidden">
       <div 
         v-for="i in 16" 
         :key="i" 
@@ -30,7 +29,7 @@ const props = defineProps({
   },
   seed: {
     type: String,
-    default: 'mario'
+    default: 'user'
   },
   size: {
     type: String,
@@ -41,41 +40,25 @@ const props = defineProps({
 
 const sizeClasses = computed(() => {
   const sizes: Record<string, string> = {
-    sm: 'w-8 h-8 shadow-pixel-sm',
-    md: 'w-12 h-12 shadow-pixel',
-    lg: 'w-20 h-20 shadow-pixel',
-    xl: 'w-32 h-32 shadow-pixel-lg'
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-20 h-20',
+    xl: 'w-32 h-32'
   }
   return sizes[props.size]
 })
 
-// Simple deterministic color generator based on seed
 const getColor = (index: number) => {
   const colors = [
-    '#ff3844', // Red
-    '#3562ff', // Blue
-    '#00cc00', // Green
-    '#ffcc00', // Yellow
-    '#ffffff', // White
-    '#945e28', // Brown
-    '#000000'  // Black
+    '#00B3B3',
+    '#2D8CFF',
+    '#10b981',
+    '#f59e0b',
+    '#8b5cf6',
+    '#ec4899',
+    '#6366f1'
   ]
   const charCode = props.seed.charCodeAt(index % props.seed.length) || 0
   return colors[(charCode + index) % colors.length]
 }
 </script>
-
-<style scoped>
-.image-pixelated {
-  image-rendering: pixelated;
-}
-</style>
-
-
-
-
-
-
-
-
-

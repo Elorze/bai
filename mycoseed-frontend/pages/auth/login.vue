@@ -2,11 +2,11 @@
   <div class="w-full max-w-md mx-auto">
     <PixelCard>
       <template #header>
-        <div class="text-center font-pixel text-xl text-mario-red">登录</div>
+        <div class="text-center text-2xl font-bold text-primary">登录</div>
       </template>
 
       <div class="flex flex-col gap-6 py-4">
-        <div class="text-center font-vt323 text-lg text-gray-600">
+        <div class="text-center text-lg text-text-body">
           使用 Semi 账号登录/注册
         </div>
 
@@ -29,7 +29,7 @@
       </div>
 
       <template #footer>
-        <div class="w-full text-center text-xs text-gray-400 font-pixel uppercase">
+        <div class="w-full text-center text-sm text-text-placeholder font-medium">
           由 AA 驱动的 Web3 登录
         </div>
       </template>
@@ -40,9 +40,6 @@
 <script setup lang="ts">
 import { buildOAuthUrl, generateRandomState } from '~/utils/api'
 import { useToast } from '~/composables/useToast'
-import PixelCard from '~/components/pixel/PixelCard.vue'
-import PixelButton from '~/components/pixel/PixelButton.vue'
-
 definePageMeta({
   layout: 'unauth'
 })

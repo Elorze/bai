@@ -12,23 +12,27 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#10b981',
+          DEFAULT: '#00B3B3',
           foreground: '#ffffff'
         },
         accent: {
-          DEFAULT: '#14b8a6',
+          DEFAULT: '#2D8CFF',
           foreground: '#ffffff'
         },
-        background: '#0a0b0d',
-        foreground: '#ffffff',
+        background: '#F7F7F9',
+        foreground: '#1A1A1A',
         card: {
-          DEFAULT: '#18181b',
-          foreground: '#ffffff'
+          DEFAULT: '#FFFFFF',
+          foreground: '#1A1A1A'
         },
-        border: '#27272a',
+        'input-bg': '#F5F7FA',
+        'text-title': '#1A1A1A',
+        'text-body': '#666666',
+        'text-placeholder': '#999999',
+        border: '#F0F0F0',
         muted: {
-          DEFAULT: '#3f3f46',
-          foreground: '#a1a1aa'
+          DEFAULT: '#F0F0F0',
+          foreground: '#666666'
         },
         destructive: {
           DEFAULT: '#ef4444',
@@ -45,25 +49,15 @@ module.exports = {
         info: {
           DEFAULT: '#3b82f6',
           foreground: '#ffffff'
-        },
-        'mario-red': '#ff3844',
-        'mario-green': '#00cc00',
-        'mario-yellow': '#ffcc00',
-        'mario-blue': '#3562ff',
-        'mario-sky': '#6b8cff',
-        'mario-ground': '#945e28',
-        'mario-brick': '#c85050',
-        'mario-brown': '#945e28',
-        'mario-coin': '#ffcc00'
+        }
       },
       fontFamily: {
-        pixel: ['Press Start 2P', 'cursive'],
-        vt323: ['VT323', 'monospace']
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'PingFang SC', 'sans-serif']
       },
       boxShadow: {
-        'pixel': '4px 4px 0px 0px #000000',
-        'pixel-sm': '2px 2px 0px 0px #000000',
-        'pixel-lg': '6px 6px 0px 0px #000000'
+        'soft': '0 4px 20px -4px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04)',
+        'soft-lg': '0 12px 40px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.06)',
+        'primary': '0 10px 30px -10px rgba(0, 179, 179, 0.3)'
       }
     }
   },

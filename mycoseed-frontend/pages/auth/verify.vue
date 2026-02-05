@@ -2,16 +2,16 @@
   <div class="w-full max-w-md">
     <PixelCard>
       <template #header>
-        <div class="text-center font-pixel text-xl text-mario-red">验证码</div>
+        <div class="text-center text-xl font-bold text-primary">验证码</div>
       </template>
 
       <div class="flex flex-col gap-6 py-4">
-        <div class="text-center font-vt323 text-lg">
-          <div v-if="setPassword" class="mb-2 text-mario-green font-bold text-xl">
+        <div class="text-center text-lg text-text-body">
+          <div v-if="setPassword" class="mb-2 text-success font-bold text-xl">
             设置密码验证
           </div>
           请输入发送到
-          <span class="text-mario-red font-bold">
+          <span class="text-primary font-bold">
             {{ maskedIdentifier }}
           </span>
           的{{ identifierType === 'phone' ? '短信' : '邮件' }}验证码
@@ -19,7 +19,7 @@
 
         <!-- 验证码输入 -->
         <div class="space-y-2">
-          <label class="block font-pixel text-xs uppercase text-gray-600">验证码 (6位数字)</label>
+          <label class="block text-base font-bold text-text-body">验证码 (6位数字)</label>
           <div class="flex gap-2 justify-center">
             <input 
               v-for="(digit, index) in formState.pin" 
@@ -27,7 +27,7 @@
               v-model="formState.pin[index]"
               type="text"
               maxlength="1"
-              class="w-12 h-12 text-center text-xl font-bold border-2 border-black focus:outline-none focus:shadow-pixel-sm font-vt323"
+              class="w-12 h-12 text-center text-xl font-bold rounded-2xl bg-input-bg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card border-0"
               :disabled="loading"
               @input="handlePinInput(index, $event)"
               @keydown="handleKeydown(index, $event)"
@@ -41,7 +41,7 @@
             type="button"
             :disabled="countdown > 0 || loading"
             @click="resendCode"
-            class="font-pixel text-xs text-mario-red hover:underline disabled:text-gray-400 disabled:no-underline"
+            class="text-sm font-medium text-primary hover:underline disabled:text-text-placeholder disabled:no-underline"
           >
             {{ countdown > 0 ? `重新发送(${countdown}s)` : '重新发送验证码' }}
           </button>
@@ -75,9 +75,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
 import { useUserStore } from '~/stores/user'
 import { getApiBaseUrl } from '~/utils/api'
-import PixelCard from '~/components/pixel/PixelCard.vue'
-import PixelButton from '~/components/pixel/PixelButton.vue'
-
 definePageMeta({
   layout: 'unauth'
 })

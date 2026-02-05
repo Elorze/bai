@@ -1,22 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --primary: #ff3844;
-  --accent: #ffcc00;
-  --background: #6b8cff; /* Mario Sky Blue */
-  --foreground: #000000;
-  --card: #ffffff;
-  --border: #000000;
-  --muted: #e5e5e5;
-  --muted-foreground: #737373;
+  --primary: #00B3B3;
+  --accent: #2D8CFF;
+  --background: #F7F7F9;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --input-bg: #F5F7FA;
+  --text-title: #1A1A1A;
+  --text-body: #666666;
+  --text-placeholder: #999999;
+  --border: #F0F0F0;
+  --muted: #F0F0F0;
+  --muted-foreground: #666666;
   --destructive: #ef4444;
-  --success: #00cc00;
+  --success: #10b981;
   --warning: #f59e0b;
-  --info: #3562ff;
+  --info: #3b82f6;
 }
 
 /* 基础样式重置 */
@@ -31,19 +33,19 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'VT323', monospace; /* Use VT323 for body text as it's more readable */
-  font-size: 18px;
-  line-height: 1.4;
-  background-image: 
-    linear-gradient(transparent 90%, rgba(255,255,255,0.2) 90%),
-    linear-gradient(90deg, transparent 90%, rgba(255,255,255,0.2) 90%);
-  background-size: 20px 20px; /* Grid pattern for retro feel */
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Press Start 2P', cursive; /* Headers use the blocky font */
-  text-transform: uppercase;
-  line-height: 1.5;
+  font-weight: 700;
+  color: var(--text-title);
+  line-height: 1.4;
+}
+
+h1 {
+  font-size: 1.5rem;
 }
 
 /* 容器样式 */
@@ -53,46 +55,22 @@ h1, h2, h3, h4, h5, h6 {
   max-height: 80vh;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - 浅色柔和 */
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #F0F0F0;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ffcc00;
-  border: 2px solid #000000;
+  background: #ccc;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ffaa00;
-}
-
-/* Utility Classes for Pixel Art */
-.pixel-corners {
-  clip-path: polygon(
-    0px 4px, 4px 4px, 4px 0px, 
-    calc(100% - 4px) 0px, calc(100% - 4px) 4px, 100% 4px, 
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 
-    4px 100%, 4px calc(100% - 4px), 0px calc(100% - 4px)
-  );
-}
-
-.text-shadow-pixel {
-  text-shadow: 2px 2px 0px #000000;
-}
-
-.btn-primary {
-  @apply bg-primary text-white font-pixel text-xs px-4 py-3 border-2 border-black shadow-pixel hover:translate-y-1 hover:shadow-none transition-all active:translate-y-1 active:shadow-none;
-}
-
-.btn-secondary {
-  @apply bg-white text-black font-pixel text-xs px-4 py-3 border-2 border-black shadow-pixel hover:bg-gray-100 hover:translate-y-1 hover:shadow-none transition-all active:translate-y-1 active:shadow-none;
-}
-
-.card {
-  @apply bg-white border-2 border-black shadow-pixel p-4;
+  background: #b3b3b3;
 }

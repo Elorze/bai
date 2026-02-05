@@ -1,14 +1,14 @@
 <template>
   <div 
     ref="container" 
-    class="w-full h-full relative overflow-hidden bg-mario-sky bg-[size:40px_40px]"
+    class="w-full h-full relative overflow-hidden bg-background"
     style="background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);"
   >
     <svg ref="svgRef" class="w-full h-full block"></svg>
     
     <!-- Loading State -->
     <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div class="font-pixel text-white text-xl animate-pulse">LOADING WORLD...</div>
+      <div class="font-bold text-white text-xl animate-pulse">LOADING WORLD...</div>
     </div>
 
     <!-- Tooltip Overlay -->
@@ -17,11 +17,11 @@
       class="absolute pointer-events-none z-10 pixel-tooltip"
       :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
     >
-      <div class="bg-white border-2 border-black p-2 shadow-pixel flex flex-col gap-1">
-        <div class="font-pixel text-xs uppercase text-mario-red">{{ hoveredNode.type === 'COMMUNITY' ? '社群' : '用户' }}</div>
-        <div class="font-vt323 text-lg leading-none">{{ hoveredNode.name }}</div>
+      <div class="bg-card rounded-2xl border border-border p-3 shadow-soft flex flex-col gap-1">
+        <div class="font-bold text-xs uppercase text-primary">{{ hoveredNode.type === 'COMMUNITY' ? '社群' : '用户' }}</div>
+        <div class="text-lg leading-none text-text-body">{{ hoveredNode.name }}</div>
         <div class="flex items-center gap-1 text-xs text-gray-500">
-          <div class="w-2 h-2 bg-mario-coin rounded-full"></div>
+          <div class="w-2 h-2 bg-primary rounded-full"></div>
           {{ hoveredNode.value }} 权重
         </div>
         <div v-if="hoveredNode.participationScore" class="text-xs text-blue-600">

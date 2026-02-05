@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-mario-sky py-4 md:py-8">
+  <div class="min-h-screen bg-background py-4 md:py-8">
     <div class="container mx-auto px-4 md:px-6 max-w-7xl">
       <!-- 返回按钮 -->
       <div class="mb-6">
@@ -14,7 +14,7 @@
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div class="font-pixel text-lg text-white text-shadow-pixel animate-pulse">加载中...</div>
+        <div class="text-lg text-text-body animate-pulse">加载中...</div>
       </div>
 
       <!-- 任务详情 -->
@@ -26,15 +26,15 @@
           </template>
           <div class="space-y-4">
             <div class="flex items-start justify-between gap-4 flex-wrap">
-              <h1 class="font-pixel text-xl md:text-2xl text-black leading-tight flex-1 min-w-0">
+              <h1 class="font-bold text-xl md:text-2xl text-text-title leading-tight flex-1 min-w-0">
                 {{ task.title || '加载中...' }}
               </h1>
               <div class="flex items-center gap-3 flex-wrap">
-                <span class="px-3 py-1.5 bg-mario-coin text-white border-2 border-black shadow-pixel-sm font-pixel text-[10px] uppercase">
+                <span class="px-3 py-1.5 bg-primary text-white border border-border rounded-2xl shadow-soft-sm font-bold text-[10px] uppercase">
                   {{ task.reward }} {{ taskRewardSymbol }}
                 </span>
                 <span 
-                  class="px-3 py-1.5 border-2 border-black shadow-pixel-sm font-pixel text-[10px] uppercase"
+                  class="px-3 py-1.5 border border-border rounded-2xl shadow-soft-sm font-bold text-[10px] uppercase"
                   :class="getStatusBadgeClass(task.status)"
                 >
                   {{ getStatusText(task.status) }}
@@ -43,73 +43,73 @@
             </div>
             
             <div class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-2">任务描述</h3>
-              <p class="font-vt323 text-lg text-black leading-relaxed">{{ task.description }}</p>
+              <h3 class="font-bold text-xs uppercase text-text-title mb-2">任务描述</h3>
+              <p class=" text-lg text-text-title leading-relaxed">{{ task.description }}</p>
             </div>
             
             <div v-if="task.proofConfig" class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-4">提交要求</h3>
+              <h3 class="font-bold text-xs uppercase text-text-title mb-4">提交要求</h3>
               <div class="space-y-3">
                 <!-- 照片证据 -->
-                <div v-if="task.proofConfig.photo?.enabled" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
+                <div v-if="task.proofConfig.photo?.enabled" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="text-xl">📷</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">照片证据</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">照片证据</h4>
                   </div>
-                  <div class="font-vt323 text-base text-black space-y-1">
+                  <div class=" text-base text-text-title space-y-1">
                     <div>数量要求：{{ task.proofConfig.photo.count }}张</div>
                     <div v-if="task.proofConfig.photo.requirements" class="mt-2">
-                      <span class="font-pixel text-[10px] uppercase text-black/70">要求说明：</span>
+                      <span class="font-bold text-[10px] uppercase text-text-body">要求说明：</span>
                       <p class="mt-1">{{ task.proofConfig.photo.requirements }}</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- 位置定位 -->
-                <div v-if="task.proofConfig.gps?.enabled" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
+                <div v-if="task.proofConfig.gps?.enabled" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="text-xl">📍</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">位置定位</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">位置定位</h4>
                   </div>
                 </div>
 
                 <!-- 文字描述 -->
-                <div v-if="task.proofConfig.description?.enabled" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
+                <div v-if="task.proofConfig.description?.enabled" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="text-xl">📝</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">文字描述</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">文字描述</h4>
                   </div>
-                  <div class="font-vt323 text-base text-black space-y-1">
+                  <div class=" text-base text-text-title space-y-1">
                     <div>最少字数：{{ task.proofConfig.description.minWords || 10 }}字</div>
                     <div v-if="task.proofConfig.description.prompt" class="mt-2">
-                      <span class="font-pixel text-[10px] uppercase text-black/70">提示语：</span>
+                      <span class="font-bold text-[10px] uppercase text-text-body">提示语：</span>
                       <p class="mt-1">{{ task.proofConfig.description.prompt }}</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- 如果没有配置任何提交要求 -->
-                <div v-if="!hasAnyProofConfig(task.proofConfig)" class="font-vt323 text-base text-black/60">
+                <div v-if="!hasAnyProofConfig(task.proofConfig)" class=" text-base text-text-title/60">
                   未设置提交要求
                 </div>
               </div>
             </div>
             
             <div class="pt-4 border-t-2 border-black/20">
-              <div class="space-y-3 font-vt323 text-base">
+              <div class="space-y-3  text-base">
                 <!-- 第一行：发布者 -->
                 <div class="flex justify-between items-center pb-2 border-b border-black/10">
-                  <span class="text-black/70">发布者:</span>
-                  <span class="text-black font-medium">{{ task.creator }}</span>
+                  <span class="text-text-body">发布者:</span>
+                  <span class="text-text-title font-medium">{{ task.creator }}</span>
                 </div>
                 
                 <!-- 预留用户列表（如果指定了用户） -->
                 <div v-if="task.assignedUserIds && task.assignedUserIds.length > 0" class="flex flex-wrap items-center gap-2 pb-2 border-b border-black/10">
-                  <span class="text-black/70">预留用户:</span>
+                  <span class="text-text-body">预留用户:</span>
                   <span
                     v-for="(assignedUserId, index) in task.assignedUserIds"
                     :key="assignedUserId"
-                    class="font-medium text-black"
+                    class="font-medium text-text-title"
                   >
                     {{ getUserName(assignedUserId) || '未知用户' }}<span v-if="index < task.assignedUserIds.length - 1">、</span>
                   </span>
@@ -117,27 +117,27 @@
                 
                 <!-- 领取者信息 -->
                 <div v-if="task.claimerName" class="flex justify-between items-center pb-2 border-b border-black/10">
-                  <span class="text-black/70">领取者:</span>
-                  <span class="text-black font-medium">{{ task.claimerName }}</span>
+                  <span class="text-text-body">领取者:</span>
+                  <span class="text-text-title font-medium">{{ task.claimerName }}</span>
                 </div>
                 
                 <!-- 第三行：时间信息 -->
                 <div class="flex justify-between items-center pb-2 border-b border-black/10 gap-4">
-                  <span class="text-black/70">任务领取时间:</span>
-                  <span class="text-black font-medium">
+                  <span class="text-text-body">任务领取时间:</span>
+                  <span class="text-text-title font-medium">
                     {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
                   </span>
-                  <span class="text-black/70">领取截止时间:</span>
-                  <span class="text-black font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
-                  <span class="text-black/70">提交截止时间:</span>
-                  <span class="text-black font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
+                  <span class="text-text-body">领取截止时间:</span>
+                  <span class="text-text-title font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
+                  <span class="text-text-body">提交截止时间:</span>
+                  <span class="text-text-title font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
                 </div>
               </div>
             </div>
             
             <div v-if="task.submissionInstructions && task.submissionInstructions.trim()" class="pt-4 border-t-2 border-black/20">
-              <h3 class="font-pixel text-xs uppercase text-black mb-2">提交说明</h3>
-              <p class="font-vt323 text-lg text-black leading-relaxed">
+              <h3 class="font-bold text-xs uppercase text-text-title mb-2">提交说明</h3>
+              <p class=" text-lg text-text-title leading-relaxed">
                 {{ task.submissionInstructions }}
               </p>
             </div>
@@ -157,11 +157,11 @@
               v-for="(participant, index) in task.participantsList"
               :key="participant.id || index"
               @click="switchParticipant(participant.id || task.id)"
-              class="flex-shrink-0 px-4 py-2 border-2 border-black shadow-pixel-sm font-pixel text-xs uppercase transition-all"
+              class="flex-shrink-0 px-4 py-2 border border-border rounded-2xl shadow-soft-sm font-bold text-xs uppercase transition-all"
               :class="{
-                'bg-mario-blue text-white': currentParticipantId === (participant.id || task.id),
-                'border-mario-yellow': participant.claimerId === task.creatorId, // 创建者自己的任务行特殊标记
-                'bg-white text-black hover:bg-mario-yellow': currentParticipantId !== (participant.id || task.id),
+                'bg-primary text-white': currentParticipantId === (participant.id || task.id),
+                'border-warning': participant.claimerId === task.creatorId, // 创建者自己的任务行特殊标记
+                'bg-white text-text-title hover:bg-primary/10': currentParticipantId !== (participant.id || task.id),
                 'text-gray-400': !participant.claimerId && isAssignedUserUnclaimed(participant.claimerId, index) // 指定用户未领取时灰色
               }"
             >
@@ -185,34 +185,34 @@
           </template>
           <div class="space-y-4">
             <!-- 解析并显示凭证内容 -->
-            <div v-if="task.proof" class="font-vt323 text-base text-black">
+            <div v-if="task.proof" class=" text-base text-text-title">
               <div v-if="typeof task.proof === 'string' && task.proof.trim().startsWith('{')" class="space-y-3">
                 <!-- JSON 格式的凭证 -->
-                <div v-if="parseProof(task.proof).description" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
-                  <div class="font-pixel text-xs uppercase text-black mb-2">文字描述</div>
+                <div v-if="parseProof(task.proof).description" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
+                  <div class="font-bold text-xs uppercase text-text-title mb-2">文字描述</div>
                   <p class="whitespace-pre-wrap">{{ parseProof(task.proof).description }}</p>
                 </div>
-                <div v-if="parseProof(task.proof).files && parseProof(task.proof).files.length > 0" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
-                  <div class="font-pixel text-xs uppercase text-black mb-2">提交文件</div>
+                <div v-if="parseProof(task.proof).files && parseProof(task.proof).files.length > 0" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
+                  <div class="font-bold text-xs uppercase text-text-title mb-2">提交文件</div>
                   <div class="space-y-2">
                     <a 
                       v-for="(file, index) in parseProof(task.proof).files" 
                       :key="index"
                       :href="file.url" 
                       target="_blank"
-                      class="block p-2 bg-white border border-black hover:bg-mario-yellow transition-colors"
+                      class="block p-2 bg-card border border-border hover:bg-primary/10 transition-colors"
                     >
                       📎 {{ file.name || '未命名文件' }}
                     </a>
                   </div>
                 </div>
-                <div v-if="parseProof(task.proof).gps" class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
-                  <div class="font-pixel text-xs uppercase text-black mb-2">位置信息</div>
+                <div v-if="parseProof(task.proof).gps" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
+                  <div class="font-bold text-xs uppercase text-text-title mb-2">位置信息</div>
                   <p>纬度: {{ parseProof(task.proof).gps.latitude || parseProof(task.proof).gps.lat }}</p>
                   <p>经度: {{ parseProof(task.proof).gps.longitude || parseProof(task.proof).gps.lng }}</p>
                 </div>
               </div>
-              <div v-else class="p-3 bg-gray-50 border-2 border-black shadow-pixel-sm">
+              <div v-else class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
                 <!-- 纯文本格式的凭证 -->
                 <p class="whitespace-pre-wrap">{{ task.proof }}</p>
               </div>
@@ -234,33 +234,33 @@
               <!-- 时间线连接线 -->
               <div 
                 v-if="Number(index) < task.updates.length - 1"
-                class="absolute left-3 top-6 w-0.5 h-8 bg-mario-blue"
+                class="absolute left-3 top-6 w-0.5 h-8 bg-primary"
               ></div>
               
               <!-- 时间线节点 -->
               <div class="flex items-start gap-3">
-                <div class="flex-shrink-0 w-6 h-6 bg-mario-blue border-2 border-black shadow-pixel-sm flex items-center justify-center -ml-8">
-                  <div class="w-2 h-2 bg-white border border-black"></div>
+                <div class="flex-shrink-0 w-6 h-6 bg-primary border border-border rounded-2xl shadow-soft-sm flex items-center justify-center -ml-8">
+                  <div class="w-2 h-2 bg-card border border-border"></div>
                 </div>
                 
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1 flex-wrap">
-                    <span class="font-pixel text-[10px] uppercase text-black">{{ update.title }}</span>
-                    <span class="font-vt323 text-sm text-black/60">{{ formatDate(update.timestamp) }}</span>
+                    <span class="font-bold text-[10px] uppercase text-text-title">{{ update.title }}</span>
+                    <span class=" text-sm text-text-title/60">{{ formatDate(update.timestamp) }}</span>
                     <span 
                       v-if="update.status"
-                      class="px-2 py-0.5 border border-black font-pixel text-[8px] uppercase"
+                      class="px-2 py-0.5 border border-border font-bold text-[8px] uppercase"
                       :class="getStatusBadgeClass(update.status)"
                     >
                       {{ getStatusText(update.status, task) }}
                     </span>
                   </div>
-                  <p class="font-vt323 text-base text-black">{{ update.description }}</p>
+                  <p class=" text-base text-text-title">{{ update.description }}</p>
                   
                   <!-- 显示实时状态 -->
                   <div v-if="update.isRealTime" class="mt-2 flex items-center gap-2">
-                    <div class="w-2 h-2 bg-mario-blue border border-black animate-pulse"></div>
-                    <span class="font-vt323 text-sm text-mario-blue">实时更新中...</span>
+                    <div class="w-2 h-2 bg-primary border border-border animate-pulse"></div>
+                    <span class=" text-sm text-primary">实时更新中...</span>
                   </div>
                 </div>
               </div>
@@ -292,7 +292,7 @@
               v-if="claimError"
               class="text-center py-4 bg-red-50 border-2 border-red-300 rounded"
             >
-              <p class="font-vt323 text-base text-red-600">
+              <p class=" text-base text-red-600">
                 {{ claimError }}
               </p>
             </div>
@@ -302,7 +302,7 @@
               v-if="!isTaskStarted && !canClaim"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 任务未开始
               </p>
             </div>
@@ -312,7 +312,7 @@
               v-else-if="isTaskExpired && !canClaim"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 领取已截止
               </p>
             </div>
@@ -322,7 +322,7 @@
               v-else-if="isTaskOverdue && !canClaim"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 任务已截止
               </p>
             </div>
@@ -332,7 +332,7 @@
               v-else-if="shouldShowAssignedToOthersMessage && !claimError"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 此任务已指定给其他用户，您无法领取
               </p>
             </div>
@@ -342,7 +342,7 @@
               v-else-if="!canClaim && task.participantLimit && task.participantLimit > 1"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 {{ task.participantsList && task.participantsList.filter((p: any) => p.claimerId && p.claimedAt).length >= task.participantLimit 
                   ? '任务参与人数已满' 
                   : '您已经领取过这个任务' }}
@@ -354,7 +354,7 @@
               v-else-if="!canClaim && (!task.participantLimit || task.participantLimit === 1)"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 该任务已被{{ task.claimerName || '其他用户' }}领取
               </p>
             </div>
@@ -387,7 +387,7 @@
               v-if="(task.status === 'claimed' || task.status === 'unsubmit') && !isClaimer && task.claimerId"
               class="text-center py-4"
             >
-              <p class="font-vt323 text-base text-black/60">
+              <p class=" text-base text-text-title/60">
                 此任务已被{{ task.claimerName || '其他用户' }}领取
               </p>
             </div>
@@ -461,11 +461,11 @@
               </template>
               <!-- 已转账：显示状态标记 -->
               <div v-else class="text-center py-4">
-                <div class="bg-mario-green/20 border-2 border-mario-green shadow-pixel-sm p-4 mb-3">
-                  <p class="font-vt323 text-base text-black mb-1">
-                    <span class="font-pixel text-xs">✓</span> 已转账
+                <div class="bg-success/20 border border-success shadow-soft-sm p-4 mb-3">
+                  <p class=" text-base text-text-title mb-1">
+                    <span class="font-bold text-xs">✓</span> 已转账
                   </p>
-                  <p class="font-vt323 text-sm text-black/70">
+                  <p class=" text-sm text-text-body">
                     转账时间：{{ formatDate(task.transferredAt) }}
                   </p>
                 </div>
@@ -880,15 +880,15 @@ const getStatusClass = (status: string): string => {
 // 状态徽章样式类（像素风格）
 const getStatusBadgeClass = (status: string): string => {
   const statusClassMap: Record<TaskStatus, string> = {
-    'unclaimed': 'bg-white text-black',
-    'unsubmit': 'bg-mario-yellow text-black',
-    'claimed': 'bg-mario-yellow text-black',
-    'submitted': 'bg-mario-yellow text-black',
-    'completed': 'bg-mario-green text-white',
-    'under_review': 'bg-mario-yellow text-black',
-    'rejected': 'bg-black text-white'
+    'unclaimed': 'bg-card text-text-title',
+    'unsubmit': 'bg-warning text-text-title',
+    'claimed': 'bg-warning text-text-title',
+    'submitted': 'bg-warning text-text-title',
+    'completed': 'bg-success text-white',
+    'under_review': 'bg-warning text-text-title',
+    'rejected': 'bg-destructive text-white'
   }
-  return statusClassMap[status as TaskStatus] || 'bg-white text-black'
+  return statusClassMap[status as TaskStatus] || 'bg-card text-text-title'
 }
 
 // 格式化日期

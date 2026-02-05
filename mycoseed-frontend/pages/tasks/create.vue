@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-mario-sky py-4 md:py-8">
+  <div class="min-h-screen bg-background py-4 md:py-8">
     <div class="container mx-auto px-4 md:px-6 max-w-4xl pb-32 md:pb-24">
       <!-- 页面标题 -->
       <div class="mb-6 md:mb-8 text-center">
-        <h1 class="font-pixel text-2xl md:text-4xl text-white text-shadow-pixel mb-2 md:mb-4">创建任务</h1>
-        <div class="w-24 md:w-32 h-1 bg-white mx-auto border-2 border-black"></div>
+        <h1 class="text-2xl md:text-4xl font-bold text-text-title mb-2 md:mb-4">创建任务</h1>
+        <div class="w-24 md:w-32 h-1 bg-border mx-auto border border-border rounded-2xl"></div>
       </div>
 
       <!-- 任务创建表单 -->
@@ -13,42 +13,42 @@
           <!-- 基本信息 -->
           <div class="space-y-4">
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">任务名称 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">任务名称 *</label>
               <input 
                 v-model="taskForm.title" 
                 type="text"
                 placeholder="输入任务名称"
-                class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
               />
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">任务内容 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">任务内容 *</label>
               <textarea 
                 v-model="taskForm.objective" 
                 placeholder="描述任务的具体目标，开始、结束时间，地点等信息..."
                 rows="4"
-                class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                class="w-full px-4 py-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all resize-none"
               ></textarea>
             </div>
 
             <!-- 参与人数和指定参与人员（同一行） -->
-            <div class="p-3 md:p-4 bg-gray-50 border-2 border-black shadow-pixel-sm">
+            <div class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- 左边：参与人数 -->
                 <div>
-                  <label class="block font-pixel text-xs uppercase mb-2 text-black">参与人数</label>
+                  <label class="block font-bold text-xs uppercase mb-2 text-text-title">参与人数</label>
                   <input
                     v-model.number="taskForm.participantLimit"
                     type="number"
                     min="1"
                     placeholder="1"
-                    class="w-full h-12 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    class="w-full h-12 px-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <p v-if="participantError" class="mt-1 font-vt323 text-xs text-mario-red">
+                  <p v-if="participantError" class="mt-1  text-xs text-destructive">
                     {{ participantError }}
                   </p>
-                  <p v-else-if="taskForm.participantLimit" class="mt-2 font-vt323 text-sm text-black/70">
+                  <p v-else-if="taskForm.participantLimit" class="mt-2  text-sm text-text-title/70">
                     最多 {{ taskForm.participantLimit }} 人可以参与此任务
                   </p>
                 </div>
@@ -56,14 +56,14 @@
                 <!-- 右边：指定参与人员 -->
                 <div>
                   <div class="flex items-center justify-between mb-2">
-                    <label class="block font-pixel text-xs uppercase text-black">指定参与人员</label>
+                    <label class="block font-bold text-xs uppercase text-text-title">指定参与人员</label>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input 
                         type="checkbox" 
                         v-model="assignUser"
                         class="sr-only peer"
                       />
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border-2 border-black peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-2 after:border-black after:h-5 after:w-5 after:transition-all peer-checked:bg-mario-green"></div>
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border border-border rounded-2xl peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-input-bg after:border after:border-border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                   
@@ -75,19 +75,19 @@
                         @focus="showUserDropdown = true"
                         type="text"
                         placeholder="搜索用户..."
-                        class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                        class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                       />
                       <!-- 下拉列表 -->
                       <div 
                         v-if="showUserDropdown && filteredUsers.length > 0"
-                        class="absolute z-50 w-full mt-1 bg-white border-2 border-black shadow-pixel-sm max-h-60 overflow-y-auto"
+                        class="absolute z-50 w-full mt-1 bg-card border border-border rounded-2xl shadow-soft-lg max-h-60 overflow-y-auto"
                       >
                         <button
                           v-for="user in filteredUsers"
                           :key="user.id"
                           @click="selectUser(user)"
                           :disabled="isUserSelected(user.id)"
-                          class="w-full px-4 py-2 text-left hover:bg-mario-yellow font-vt323 text-base border-b border-black/10 last:border-b-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="w-full px-4 py-2 text-left hover:bg-primary/10  text-base border-b border-black/10 last:border-b-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {{ user.name }}
                         </button>
@@ -96,17 +96,17 @@
                     
                     <!-- 已选择的用户列表（多人任务） -->
                     <div v-if="selectedUsers.length > 0" class="space-y-2">
-                      <div class="font-pixel text-[10px] uppercase text-black">已选择用户 ({{ selectedUsers.length }}/{{ taskForm.participantLimit }})</div>
+                      <div class="font-bold text-[10px] uppercase text-text-title">已选择用户 ({{ selectedUsers.length }}/{{ taskForm.participantLimit }})</div>
                       <div class="flex flex-wrap gap-2">
                         <div
                           v-for="(user, index) in selectedUsers"
                           :key="user.id"
-                          class="flex items-center gap-2 px-3 py-1 bg-mario-yellow border-2 border-black shadow-pixel-sm"
+                          class="flex items-center gap-2 px-3 py-1 bg-primary/20 border border-border rounded-2xl shadow-soft"
                         >
-                          <span class="font-vt323 text-sm">{{ user.name }}</span>
+                          <span class=" text-sm">{{ user.name }}</span>
                           <button
                             @click="removeUser(index)"
-                            class="text-mario-red hover:text-red-700 font-bold"
+                            class="text-destructive hover:text-red-700 font-bold"
                           >
                             ×
                           </button>
@@ -114,7 +114,7 @@
                       </div>
                     </div>
                     
-                    <p v-if="assignUser && selectedUsers.length === 0" class="font-vt323 text-sm text-black/70">
+                    <p v-if="assignUser && selectedUsers.length === 0" class=" text-sm text-text-title/70">
                       请选择用户（最多 {{ taskForm.participantLimit }} 人）
                     </p>
                   </div>
@@ -125,87 +125,87 @@
             <!-- 移动端单列，桌面端双列 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">每人积分 *</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">每人积分 *</label>
                 <input 
                   v-model="taskForm.reward" 
                   type="number"
                   step="1"
                   min="1"
                   placeholder="100"
-                  class="w-full h-12 px-4 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 />
                 
-                <p v-if="rewardExplanation" class="mt-2 font-vt323 text-sm text-black/70">
+                <p v-if="rewardExplanation" class="mt-2  text-sm text-text-title/70">
                   {{ rewardExplanation }}
                 </p>
               </div>
 
               <div>
-                <label class="block font-pixel text-xs uppercase mb-2 text-black">任务领取时间（可选）</label>
+                <label class="block font-bold text-xs uppercase mb-2 text-text-title">任务领取时间（可选）</label>
                 <div class="relative">
                   <input 
                     v-model="taskForm.startDate" 
                     type="datetime-local"
                     :min="minStart"
                     ref="startDateInput"
-                    class="w-full h-12 px-4 pr-12 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                    class="w-full h-12 px-4 pr-12 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                   />
                   <div 
                     class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
                     @click.stop="openStartDatePicker"
                   >
-                    <Icon name="heroicons:calendar" class="w-6 h-6 text-black" />
+                    <Icon name="heroicons:calendar" class="w-6 h-6 text-text-title" />
                   </div>
                 </div>
-                <p class="mt-1 font-vt323 text-xs text-black/70">
+                <p class="mt-1  text-xs text-text-title/70">
                   如果不填写，将使用发布任务时的当前时间
                 </p>
               </div>
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">领取截止时间 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">领取截止时间 *</label>
               <div class="relative">
                 <input 
                   v-model="taskForm.deadline" 
                   type="datetime-local"
                   :min="taskForm.startDate || minStart"
                   ref="deadlineInput"
-                  class="w-full h-12 px-4 pr-12 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="w-full h-12 px-4 pr-12 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 />
                 <div 
                   class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
                   @click.stop="openDeadlinePicker"
                 >
-                  <Icon name="heroicons:calendar" class="w-6 h-6 text-black" />
+                  <Icon name="heroicons:calendar" class="w-6 h-6 text-text-title" />
                 </div>
               </div>
-              <p class="mt-1 font-vt323 text-xs text-black/70">
+              <p class="mt-1  text-xs text-text-title/70">
                 过了此时间后，任务将无法再领取
               </p>
             </div>
 
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">提交截止时间 *</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">提交截止时间 *</label>
               <div class="relative">
                 <input 
                   v-model="taskForm.submitDeadline" 
                   type="datetime-local"
                   :min="taskForm.deadline || taskForm.startDate || minStart"
                   ref="submitDeadlineInput"
-                  class="w-full h-12 px-4 pr-12 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-lg focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                  class="w-full h-12 px-4 pr-12 bg-input-bg border border-border rounded-2xl shadow-soft  text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 />
                 <div 
                   class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
                   @click.stop="openSubmitDeadlinePicker"
                 >
-                  <Icon name="heroicons:calendar" class="w-6 h-6 text-black" />
+                  <Icon name="heroicons:calendar" class="w-6 h-6 text-text-title" />
                 </div>
               </div>
-              <p class="mt-1 font-vt323 text-xs text-black/70">
+              <p class="mt-1  text-xs text-text-title/70">
                 已领取任务必须在此时间前提交，否则将标记为已截止
               </p>
-              <p v-if="dateError" class="mt-1 font-vt323 text-xs text-mario-red">
+              <p v-if="dateError" class="mt-1  text-xs text-destructive">
                 {{ dateError }}
               </p>
             </div>
@@ -214,26 +214,26 @@
           <!-- 提交说明（展示给报名者的信息补充） -->
           <div class="border-t-2 border-black pt-4 md:pt-6">
             <div>
-              <label class="block font-pixel text-xs uppercase mb-2 text-black">提交说明（可选）</label>
+              <label class="block font-bold text-xs uppercase mb-2 text-text-title">提交说明（可选）</label>
               <textarea
                 v-model="taskForm.submissionInstructions"
                 placeholder="补充任务完成后的提交说明，如需要强调的注意事项等..."
                 rows="3"
-                class="w-full px-4 py-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base text-black focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                class="w-full px-4 py-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-base text-text-title focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all resize-none"
               ></textarea>
             </div>
           </div>
 
           <!-- 提交格式 -->
           <div class="border-t-2 border-black pt-4 md:pt-6">
-            <h3 class="font-pixel text-sm uppercase mb-4 text-black">提交格式</h3>
+            <h3 class="font-bold text-sm uppercase mb-4 text-text-title">提交格式</h3>
             <div class="space-y-3 md:space-y-4">
               <!-- 照片证据 -->
-              <div class="p-3 md:p-4 bg-gray-50 border-2 border-black shadow-pixel-sm">
+              <div class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
                     <span class="text-xl md:text-2xl">📷</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">照片证据</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">照片证据</h4>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -241,38 +241,38 @@
                       v-model="proofConfig.photo.enabled"
                       class="sr-only peer"
                     />
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border-2 border-black peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-2 after:border-black after:h-5 after:w-5 after:transition-all peer-checked:bg-mario-green"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border border-border rounded-2xl peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-input-bg after:border after:border-border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
                 
                 <div v-if="proofConfig.photo.enabled" class="space-y-3 mt-3">
                   <div>
-                    <label class="block font-pixel text-[10px] uppercase mb-1 text-black">照片数量</label>
+                    <label class="block font-bold text-[10px] uppercase mb-1 text-text-title">照片数量</label>
                     <select 
                       v-model="proofConfig.photo.count"
-                      class="w-full h-10 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                      class="w-full h-10 px-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                     >
                       <option v-for="opt in photoCountOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                     </select>
                   </div>
                   <div>
-                    <label class="block font-pixel text-[10px] uppercase mb-1 text-black">要求说明</label>
+                    <label class="block font-bold text-[10px] uppercase mb-1 text-text-title">要求说明</label>
                     <textarea 
                       v-model="proofConfig.photo.requirements"
                       placeholder="描述照片的具体要求..."
                       rows="2"
-                      class="w-full px-3 py-2 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all resize-none"
+                      class="w-full px-3 py-2 bg-input-bg border border-border rounded-2xl shadow-soft  text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all resize-none"
                     ></textarea>
                   </div>
                 </div>
               </div>
 
               <!-- GPS定位 -->
-              <div class="p-3 md:p-4 bg-gray-50 border-2 border-black shadow-pixel-sm">
+              <div class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
                     <span class="text-xl md:text-2xl">📍</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">位置定位</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">位置定位</h4>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -280,17 +280,17 @@
                       v-model="proofConfig.gps.enabled"
                       class="sr-only peer"
                     />
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border-2 border-black peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-2 after:border-black after:h-5 after:w-5 after:transition-all peer-checked:bg-mario-green"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border border-border rounded-2xl peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-input-bg after:border after:border-border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
               </div>
 
               <!-- 文字描述 -->
-              <div class="p-3 md:p-4 bg-gray-50 border-2 border-black shadow-pixel-sm">
+              <div class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
                     <span class="text-xl md:text-2xl">📝</span>
-                    <h4 class="font-pixel text-xs uppercase text-black">文字描述</h4>
+                    <h4 class="font-bold text-xs uppercase text-text-title">文字描述</h4>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -298,28 +298,28 @@
                       v-model="proofConfig.description.enabled"
                       class="sr-only peer"
                     />
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border-2 border-black peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-2 after:border-black after:h-5 after:w-5 after:transition-all peer-checked:bg-mario-green"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-black border border-border rounded-2xl peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-input-bg after:border after:border-border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
                 
                 <div v-if="proofConfig.description.enabled" class="space-y-3 mt-3">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block font-pixel text-[10px] uppercase mb-1 text-black">最少字数</label>
+                      <label class="block font-bold text-[10px] uppercase mb-1 text-text-title">最少字数</label>
                       <input 
                         v-model="proofConfig.description.minWords"
                         type="number"
                         placeholder="10"
-                        class="w-full h-10 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                        class="w-full h-10 px-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                       />
                     </div>
                     <div>
-                      <label class="block font-pixel text-[10px] uppercase mb-1 text-black">提示语</label>
+                      <label class="block font-bold text-[10px] uppercase mb-1 text-text-title">提示语</label>
                       <input 
                         v-model="proofConfig.description.prompt"
                         type="text"
                         placeholder="请描述..."
-                        class="w-full h-10 px-3 bg-white border-2 border-black shadow-pixel-sm font-vt323 text-base focus:outline-none focus:shadow-pixel focus:-translate-y-1 transition-all"
+                        class="w-full h-10 px-3 bg-input-bg border border-border rounded-2xl shadow-soft  text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                       />
                     </div>
                   </div>
@@ -336,7 +336,7 @@
 
     <!-- 底部固定操作栏 -->
     <!-- 移动端：放在底部导航栏上方（bottom-16），桌面端：放在底部（bottom-0） -->
-    <div class="fixed bottom-16 left-0 right-0 p-4 bg-white border-t-2 border-black z-[60] flex gap-3 shadow-[0_-4px_0_rgba(0,0,0,0.05)] md:bottom-0 md:border-t-2" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
+    <div class="fixed bottom-16 left-0 right-0 p-4 bg-input-bg border-t-2 border-black z-[60] flex gap-3 shadow-[0_-4px_0_rgba(0,0,0,0.05)] md:bottom-0 md:border-t-2" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
       <PixelButton 
         @click="navigateTo('/tasks')"
         variant="secondary"
@@ -822,8 +822,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.text-shadow-pixel {
-  text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-}
-</style>

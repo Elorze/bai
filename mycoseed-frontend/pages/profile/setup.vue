@@ -3,19 +3,19 @@
     <div class="w-full max-w-2xl mx-auto px-4 py-8">
       <PixelCard>
         <template #header>
-          <div class="text-center font-pixel text-xl text-mario-red">设置个人信息</div>
+          <div class="text-center text-xl font-bold text-primary">设置个人信息</div>
         </template>
 
         <div class="flex flex-col gap-6 py-4">
           <!-- 头像上传 -->
           <div class="space-y-4">
-            <label class="block font-pixel text-xs uppercase text-gray-600">头像</label>
+            <label class="block text-base font-bold text-text-body">头像</label>
             <div class="flex flex-col items-center gap-4">
               <div class="relative">
-                <div v-if="previewUrl" class="w-32 h-32 border-4 border-black overflow-hidden">
+                <div v-if="previewUrl" class="w-32 h-32 rounded-2xl border border-border overflow-hidden">
                   <img :src="previewUrl" alt="头像预览" class="w-full h-full object-cover" />
                 </div>
-                <div v-else class="w-32 h-32 border-4 border-black bg-gray-100 flex items-center justify-center">
+                <div v-else class="w-32 h-32 rounded-2xl border border-border bg-gray-100 flex items-center justify-center">
                   <span class="text-4xl">👤</span>
                 </div>
                 <input
@@ -44,7 +44,7 @@
                   清除
                 </PixelButton>
               </div>
-              <div v-if="uploadError" class="text-red-500 text-sm font-vt323">
+              <div v-if="uploadError" class="text-red-500 text-sm ">
                 {{ uploadError }}
               </div>
             </div>
@@ -52,30 +52,30 @@
 
           <!-- 名字输入 -->
           <div class="space-y-2">
-            <label class="block font-pixel text-xs uppercase text-gray-600">名字 *</label>
+            <label class="block text-base font-bold text-text-body">名字 *</label>
             <input
               v-model="formState.name"
               type="text"
               placeholder="输入您的名字"
-              class="w-full h-12 px-4 bg-gray-50 border-2 border-black font-vt323 text-lg focus:outline-none focus:shadow-pixel-sm"
+              class="w-full h-12 px-4 bg-input-bg border border-border rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card"
               :disabled="loading"
             />
           </div>
 
           <!-- 个人简介输入 -->
           <div class="space-y-2">
-            <label class="block font-pixel text-xs uppercase text-gray-600">个人简介</label>
+            <label class="block text-base font-bold text-text-body">个人简介</label>
             <textarea
               v-model="formState.bio"
               placeholder="介绍一下自己..."
               rows="4"
-              class="w-full px-4 py-3 bg-gray-50 border-2 border-black font-vt323 text-base focus:outline-none focus:shadow-pixel-sm resize-none"
+              class="w-full px-4 py-3 bg-input-bg border border-border rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card resize-none"
               :disabled="loading"
             />
           </div>
 
           <!-- 错误提示 -->
-          <div v-if="error" class="text-red-500 text-sm font-vt323 bg-red-50 border-2 border-red-500 p-3">
+          <div v-if="error" class="text-red-500 text-sm  bg-red-50 border border-destructive rounded-2xl p-3">
             {{ error }}
           </div>
 
