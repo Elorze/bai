@@ -394,51 +394,6 @@
       </div>
     </div>
 
-    <!-- 转账标记弹窗 -->
-    <div
-      v-if="showTransferModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      @click="showTransferModal = false"
-    >
-      <div
-        class="bg-card border border-border rounded-2xl shadow-soft-lg max-w-lg w-full"
-        @click.stop
-      >
-        <div class="p-6">
-          <h3 class="font-bold text-sm uppercase text-black mb-4">转账确认</h3>
-          
-          <div class="bg-success/20 border border-success shadow-soft p-4 mb-6">
-            <p class=" text-base text-black mb-2">
-              <span class="font-bold text-xs">💸</span> 是否已完成转账？
-            </p>
-            <div class=" text-sm text-black/70 space-y-1">
-              <p>接收方：{{ currentSubmission?.submitter.name }}</p>
-              <p>转账金额：{{ transferData?.reward || 0 }} {{ taskRewardSymbol }}</p>
-            </div>
-          </div>
-          
-          <div class="flex gap-4">
-            <PixelButton
-              @click="showTransferModal = false"
-              variant="secondary"
-              size="lg"
-              :block="false"
-            >
-              稍后标记
-            </PixelButton>
-            <PixelButton
-              @click="handleMarkTransferCompleted"
-              variant="primary"
-              size="lg"
-              :block="false"
-              :disabled="isMarkingTransfer"
-            >
-              {{ isMarkingTransfer ? '标记中...' : '已完成转账' }}
-            </PixelButton>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -485,8 +440,7 @@ const transferData = ref<{
 } | null>(null)
 const isTransferring = ref(false)
 
-// 转账标记弹窗相关状态
-const showTransferModal = ref(false)
+// 标记转账相关状态
 const isMarkingTransfer = ref(false)
 
 // 任务数据
@@ -1254,12 +1208,9 @@ const handleTransferToSemi = async () => {
       console.log('✅ 已打开转账页面')
       toast.add({
         title: '已打开转账页面',
-        description: '请在 Semi 页面完成转账',
+        description: '请在 Semi 页面完成转账后，返回标记为已转账',
         color: 'green'
       })
-      
-      // 显示转账标记弹窗
-      showTransferModal.value = true
     }
   } catch (error) {
     console.error('获取钱包地址失败：', error)
@@ -1307,45 +1258,8 @@ const handleMarkTransferCompleted = async () => {
         color: 'green'
       })
       
-      // 更新本地状态 - 使用 taskId 查找对应的提交，而不是使用索引
-      // 这样可以避免 loadTask() 重新创建数组后索引不匹配的问题
-      const targetSubmissionIndex = allSubmissions.value.findIndex(
-        s => s.taskId === targetTaskId
-      )
-      console.log('10. 准备更新，targetTaskId:', targetTaskId, 'targetSubmissionIndex:', targetSubmissionIndex, 'allSubmissions.length:', allSubmissions.value.length)
-      
-      if (targetSubmissionIndex >= 0) {
-        if (result.data?.transferredAt) {
-          console.log('11. 设置 transferredAt:', result.data.transferredAt)
-          (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = result.data.transferredAt
-          
-          // 确保 currentSubmissionIndex 指向正确的索引，这样 UI 才会更新
-          if (targetSubmissionIndex !== currentSubmissionIndex.value) {
-            currentSubmissionIndex.value = targetSubmissionIndex
-          }
-          
-          console.log('12. 更新后的 submission taskId:', allSubmissions.value[targetSubmissionIndex]?.taskId, 'transferredAt:', (allSubmissions.value[targetSubmissionIndex] as any)?.transferredAt)
-          console.log('13. 更新后的 currentSubmission taskId:', currentSubmission.value?.taskId, 'transferredAt:', (currentSubmission.value as any)?.transferredAt)
-        } else {
-          console.warn('⚠️ result.data?.transferredAt 不存在，使用当前时间')
-          const transferredAtValue: string = new Date().toISOString()
-          (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = transferredAtValue
-          
-          // 确保 currentSubmissionIndex 指向正确的索引，这样 UI 才会更新
-          if (targetSubmissionIndex !== currentSubmissionIndex.value) {
-            currentSubmissionIndex.value = targetSubmissionIndex
-          }
-          
-          console.log('15. 使用备用值:', transferredAtValue)
-        }
-      } else {
-        console.error('❌ 找不到对应的提交，targetTaskId:', targetTaskId)
-      }
-      
-      // 关闭弹窗
-      showTransferModal.value = false
-      
-      // 不跳转，留在当前页面让用户看到按钮变化
+      // 自动跳转到任务详情页面，页面会自动刷新显示已转账状态
+      router.push(`/tasks/${targetTaskId}?reviewed=true`)
     } else {
       console.error('❌ 标记失败:', result.message)
       toast.add({
