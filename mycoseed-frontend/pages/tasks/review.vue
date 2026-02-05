@@ -1307,25 +1307,28 @@ const handleMarkTransferCompleted = async () => {
         color: 'green'
       })
       
-      // 更新本地状态 - 直接修改源数组
-      const currentIndex = currentSubmissionIndex.value
-      console.log('10. 准备更新，currentIndex:', currentIndex, 'allSubmissions.length:', allSubmissions.value.length)
+      // 更新本地状态 - 使用 taskId 查找对应的提交，而不是使用索引
+      // 这样可以避免 loadTask() 重新创建数组后索引不匹配的问题
+      const targetSubmissionIndex = allSubmissions.value.findIndex(
+        s => s.taskId === targetTaskId
+      )
+      console.log('10. 准备更新，targetTaskId:', targetTaskId, 'targetSubmissionIndex:', targetSubmissionIndex, 'allSubmissions.length:', allSubmissions.value.length)
       
-      if (currentIndex >= 0 && currentIndex < allSubmissions.value.length) {
+      if (targetSubmissionIndex >= 0) {
         if (result.data?.transferredAt) {
           console.log('11. 设置 transferredAt:', result.data.transferredAt)
-          (allSubmissions.value[currentIndex] as any).transferredAt = result.data.transferredAt
-          console.log('12. 更新后的 submission:', allSubmissions.value[currentIndex])
+          (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = result.data.transferredAt
+          console.log('12. 更新后的 submission:', allSubmissions.value[targetSubmissionIndex])
           console.log('13. 更新后的 currentSubmission:', currentSubmission.value)
           console.log('14. 更新后的 transferredAt:', (currentSubmission.value as any).transferredAt)
         } else {
           console.warn('⚠️ result.data?.transferredAt 不存在，使用当前时间')
           const transferredAtValue: string = new Date().toISOString()
-          (allSubmissions.value[currentIndex] as any).transferredAt = transferredAtValue
+          (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = transferredAtValue
           console.log('15. 使用备用值:', transferredAtValue)
         }
       } else {
-        console.error('❌ 索引无效:', currentIndex, '长度:', allSubmissions.value.length)
+        console.error('❌ 找不到对应的提交，targetTaskId:', targetTaskId)
       }
       
       // 关闭弹窗
@@ -1367,16 +1370,23 @@ const handleUnmarkTransfer = async () => {
   isMarkingTransfer.value = true
   
   try {
-    // 直接更新本地状态，取消标记
-    const currentIndex = currentSubmissionIndex.value
-    if (currentIndex >= 0 && currentIndex < allSubmissions.value.length) {
-      console.log('4. 准备取消标记，currentIndex:', currentIndex)
-      (allSubmissions.value[currentIndex] as any).transferredAt = undefined
-      console.log('5. 取消后的 submission:', allSubmissions.value[currentIndex])
+    // 获取当前提交的 taskId
+    const targetTaskId = currentSubmission.value.taskId || taskId
+    
+    // 使用 taskId 查找对应的提交，而不是使用索引
+    // 这样可以避免 loadTask() 重新创建数组后索引不匹配的问题
+    const targetSubmissionIndex = allSubmissions.value.findIndex(
+      s => s.taskId === targetTaskId
+    )
+    console.log('4. 准备取消标记，targetTaskId:', targetTaskId, 'targetSubmissionIndex:', targetSubmissionIndex)
+    
+    if (targetSubmissionIndex >= 0) {
+      (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = undefined
+      console.log('5. 取消后的 submission:', allSubmissions.value[targetSubmissionIndex])
       console.log('6. 取消后的 currentSubmission:', currentSubmission.value)
       console.log('7. 取消后的 transferredAt:', (currentSubmission.value as any).transferredAt)
     } else {
-      console.error('❌ 索引无效:', currentIndex, '长度:', allSubmissions.value.length)
+      console.error('❌ 找不到对应的提交，targetTaskId:', targetTaskId)
     }
     
     toast.add({
