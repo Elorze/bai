@@ -67,7 +67,7 @@
             </div>
             <!-- 添加点击提示 -->
             <div class="text-xs text-gray-400 mt-3 px-4">
-              点击卡片，显示钱包
+              点击卡片查看数字身份
             </div>
           </div>
           <div v-else class="space-y-3">
@@ -169,9 +169,6 @@
                       <div class=" text-2xl">{{ formatPoints(userCommunityPoints) }} {{ getPointAbbr(userCommunity.pointName) }}</div>
                     </div>
                   </div>
-                </div>
-                <div v-else class="text-center w-full max-w-xs">
-                  <div class="text-gray-400  text-sm">未加入任何社区</div>
                 </div>
               </div>
             </div>
