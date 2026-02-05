@@ -1318,9 +1318,15 @@ const handleMarkTransferCompleted = async () => {
         if (result.data?.transferredAt) {
           console.log('11. 设置 transferredAt:', result.data.transferredAt)
           (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = result.data.transferredAt
-          console.log('12. 更新后的 submission:', allSubmissions.value[targetSubmissionIndex])
-          console.log('13. 更新后的 currentSubmission:', currentSubmission.value)
-          console.log('14. 更新后的 transferredAt:', (currentSubmission.value as any).transferredAt)
+          // 安全地打印对象，避免循环引用导致的错误
+          try {
+            const submission = allSubmissions.value[targetSubmissionIndex]
+            console.log('12. 更新后的 submission taskId:', submission?.taskId, 'transferredAt:', (submission as any)?.transferredAt)
+            console.log('13. 更新后的 currentSubmission taskId:', currentSubmission.value?.taskId, 'transferredAt:', (currentSubmission.value as any)?.transferredAt)
+            console.log('14. 更新后的 transferredAt:', (currentSubmission.value as any).transferredAt)
+          } catch (e) {
+            console.log('12-14. 更新完成，但打印对象时出错（可能是循环引用）')
+          }
         } else {
           console.warn('⚠️ result.data?.transferredAt 不存在，使用当前时间')
           const transferredAtValue: string = new Date().toISOString()
@@ -1382,9 +1388,15 @@ const handleUnmarkTransfer = async () => {
     
     if (targetSubmissionIndex >= 0) {
       (allSubmissions.value[targetSubmissionIndex] as any).transferredAt = undefined
-      console.log('5. 取消后的 submission:', allSubmissions.value[targetSubmissionIndex])
-      console.log('6. 取消后的 currentSubmission:', currentSubmission.value)
-      console.log('7. 取消后的 transferredAt:', (currentSubmission.value as any).transferredAt)
+      // 安全地打印对象，避免循环引用导致的错误
+      try {
+        const submission = allSubmissions.value[targetSubmissionIndex]
+        console.log('5. 取消后的 submission taskId:', submission?.taskId, 'transferredAt:', (submission as any)?.transferredAt)
+        console.log('6. 取消后的 currentSubmission taskId:', currentSubmission.value?.taskId, 'transferredAt:', (currentSubmission.value as any)?.transferredAt)
+        console.log('7. 取消后的 transferredAt:', (currentSubmission.value as any).transferredAt)
+      } catch (e) {
+        console.log('5-7. 取消完成，但打印对象时出错（可能是循环引用）')
+      }
     } else {
       console.error('❌ 找不到对应的提交，targetTaskId:', targetTaskId)
     }
