@@ -1118,7 +1118,8 @@ export const createTask = async (req: AuthRequest, res: Response) => {
         }))
       } else {
         // 平均分配（per_person）
-        const perPersonReward = (params.reward / participantLimit).toFixed(2)
+        // params.reward 已经是每人积分，不需要除以参与人数
+        const perPersonReward = params.reward.toFixed(2)
         for (let i = 0; i < participantLimit; i++) {
           taskRows.push({
             task_info_id: taskInfo.id,
