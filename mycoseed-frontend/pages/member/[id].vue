@@ -11,8 +11,8 @@
         <div class="flip-card-inner">
           <!-- 卡片正面 -->
           <div class="flip-card-face flip-card-front bg-white border border-border rounded-2xl shadow-soft p-6 pb-8 relative">
-            <!-- 编辑按钮（仅「我的」页面显示） -->
-            <div v-if="isMyProfile" class="absolute top-4 right-4 z-20">
+            <!-- 编辑按钮（仅「我的」页面显示）- 隐藏显示，保留逻辑供后续设置界面使用 -->
+            <div v-if="false && isMyProfile" class="absolute top-4 right-4 z-20">
               <button
                 @click.stop="isEditing = !isEditing"
                 class="w-10 h-10 bg-gray-100 border border-border rounded-2xl flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -64,6 +64,10 @@
             <!-- 简介显示 -->
             <div v-if="member?.bio" class="text-sm text-gray-600  mt-2 px-4 max-w-xs mx-auto">
               {{ member.bio }}
+            </div>
+            <!-- 添加点击提示 -->
+            <div class="text-xs text-gray-400 mt-3 px-4">
+              点击卡片，显示钱包
             </div>
           </div>
           <div v-else class="space-y-3">
