@@ -867,7 +867,7 @@ const loadTask = async () => {
             files: files,
             gpsLocation: gpsLocation,
             status: p.status || (p.claimedAt ? (p.submittedAt ? 'submitted' : 'claimed') : 'unclaimed'),
-            reward: taskData.reward, // 使用任务的基础奖励，实际奖励可能根据权重系数计算
+            reward: p.reward || taskData.reward, // 优先使用每个参与者的实际奖励，如果没有则回退到任务基础奖励
             transferredAt: p.transferredAt // ✅ 新增：从后端数据中读取转账状态
           }
         })
@@ -1083,6 +1083,11 @@ const submitReview = async () => {
         description: result.message,
         color: 'green'
       })
+      
+      // 审核成功后，重新加载任务数据以确保数据完整
+      // 这样 allSubmissions 会包含最新的 reward、status 和 transferredAt 等字段
+      // transferData 会通过 watch 自动更新，转账按钮会在数据刷新完成后自动显示
+      await loadTask()
     } else {
       toast.add({
         title: '审核失败',
