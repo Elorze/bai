@@ -619,8 +619,9 @@ const formatDate = (dateString: string | undefined): string => {
 
 // 提交表单
 const submitForm = async () => {
+  if (isSubmitting.value) return
   if (!canSubmit.value) return
-  
+
   isSubmitting.value = true
   
   try {

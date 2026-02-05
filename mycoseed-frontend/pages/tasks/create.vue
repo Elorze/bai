@@ -583,6 +583,7 @@ watch(() => [taskForm.value.startDate, taskForm.value.deadline, taskForm.value.s
 
 // 发布任务
 const publishTask = async () => {
+  if (isPublishing.value) return
   // 最终前再做一轮校验，给出明确提示
   const participantsOK = validateParticipants()
   const datesOK = validateDates()

@@ -973,8 +973,15 @@ const updateTimeline = () => {
       const timeB = new Date(b.timestamp || b.created_at || 0).getTime()
       return timeA - timeB
     })
-    
-    task.value.updates = sortedTimeline.map((statusItem: any, index: number) => {
+    // 合并连续重复项（同一 status + 同一 action），避免多次点击审核导致多条「审核通过」重复显示
+    const dedupedTimeline = sortedTimeline.filter((item: any, i: number) => {
+      const prev = sortedTimeline[i - 1]
+      if (!prev) return true
+      const same = (prev.status === item.status) && (String(prev.action || '').trim() === String(item.action || '').trim())
+      return !same
+    })
+
+    task.value.updates = dedupedTimeline.map((statusItem: any, index: number) => {
       // 处理字段名称兼容性
       const actorName = statusItem.actorName || statusItem.actor_name || ''
       const action = statusItem.action || ''

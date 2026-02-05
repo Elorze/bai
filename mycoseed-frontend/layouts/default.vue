@@ -57,15 +57,15 @@
         </Transition>
       </div>
       
-      <!-- 手机端登出按钮 -->
-      <button
+      <!-- 手机端设置按钮 -->
+      <NuxtLink
         v-if="mobileUserStore.isAuthenticated"
-        @click="handleMobileLogoutClick"
-        class="w-10 h-10 flex items-center justify-center rounded-xl bg-destructive text-white font-medium text-sm transition-all active:scale-95 shadow-soft ml-2"
-        title="登出"
+        to="/settings"
+        class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-white font-medium text-sm transition-all active:scale-95 shadow-soft ml-2"
+        title="设置"
       >
-        🚪
-      </button>
+        ⚙️
+      </NuxtLink>
     </div>
     
     <!-- 主内容区域 -->
@@ -81,23 +81,6 @@
       <span class="text-sm text-text-body">© 2024 MycoSeed</span>
     </footer>
     
-    <!-- 手机端登出确认弹窗 -->
-    <Transition name="modal">
-      <div 
-        v-if="showMobileLogoutModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        @click.self="showMobileLogoutModal = false"
-      >
-        <div class="bg-card rounded-3xl shadow-soft-lg p-6 max-w-sm w-full mx-4">
-          <h3 class="text-xl font-bold text-text-title mb-4">确认登出</h3>
-          <p class="text-text-body mb-6">确定要登出吗？登出后需要重新登录。</p>
-          <div class="flex gap-3">
-            <PixelButton variant="primary" block @click="confirmMobileLogout">确认登出</PixelButton>
-            <PixelButton variant="secondary" block @click="showMobileLogoutModal = false">取消</PixelButton>
-          </div>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -114,7 +97,6 @@ const mobileUserStore = useUserStore()
 const currentPage = ref('hub')
 const isMobileDropdownOpen = ref(false)
 const mobileCommunities = ref<Community[]>([])
-const showMobileLogoutModal = ref(false)
 
 const mobileCurrentCommunityName = computed(() => {
   return mobileCommunityStore.currentCommunity?.name || null
@@ -145,23 +127,6 @@ const loadMobileCommunities = async () => {
     mobileCommunities.value = await mobileCommunityStore.getAllCommunities()
   } catch (error) {
     console.error('Failed to load communities:', error)
-  }
-}
-
-const handleMobileLogoutClick = () => {
-  showMobileLogoutModal.value = true
-}
-
-const confirmMobileLogout = async () => {
-  showMobileLogoutModal.value = false
-  await mobileUserStore.signout()
-  if (typeof window !== 'undefined') {
-    localStorage.clear()
-    sessionStorage.clear()
-  }
-  await router.replace('/auth/login')
-  if (typeof window !== 'undefined') {
-    window.location.href = '/auth/login'
   }
 }
 

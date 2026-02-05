@@ -1621,6 +1621,20 @@ export const approveTask = async (req: AuthRequest, res: Response) =>
             })
         }
 
+        // 已审核通过的任务：幂等返回，不再重复写入时间线，避免多次点击出现多条「审核通过」进度
+        if (task.status === 'completed')
+        {
+            return res.json({
+                success: true,
+                message: '任务已审核通过',
+                data: {
+                    claimerId: task.claimer_id,
+                    reward: parseFloat(String(task.reward || '0')),
+                    creatorId: taskInfo.creator_id
+                }
+            })
+        }
+
         // 验证该任务是否有提交的凭证（通过 task_proofs 表）
         // 对于多人任务，每个参与者独立审核，只审核传入的 task_id
         const { data: proofData } = await supabase

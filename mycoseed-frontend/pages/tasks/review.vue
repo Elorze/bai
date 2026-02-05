@@ -1029,10 +1029,11 @@ const loadTask = async () => {
 
 // 提交审核
 const submitReview = async () => {
+  if (isSubmitting.value) return
   // #region agent log
   fetch('http://127.0.0.1:7242/ingest/12fcd2f2-6fd8-4340-8068-b1f6eb08d647',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'review.vue:917',message:'submitReview called',data:{canSubmit:canSubmit.value,decision:reviewResult.value.decision,canReview:canReview.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
-  
+
   if (!canSubmit.value) return
   
   // 如果选择拒绝，显示拒绝选项弹窗
@@ -1104,8 +1105,9 @@ const submitReview = async () => {
 
 // 确认拒绝
 const confirmReject = async () => {
+  if (isSubmitting.value) return
   if (!rejectOption.value || !reviewResult.value.comments.trim()) return
-  
+
   // 保存拒绝选项，因为后面会重置
   const selectedOption = rejectOption.value
   isSubmitting.value = true

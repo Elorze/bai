@@ -85,14 +85,14 @@
             />
           </div>
           
-          <button
+          <NuxtLink
             v-if="userStore.isAuthenticated"
-            @click="handleLogoutClick"
-            class="w-10 h-10 flex items-center justify-center rounded-xl bg-destructive text-white font-medium text-sm transition-all hover:scale-105 flex-shrink-0 shadow-soft"
-            title="登出"
+            to="/settings"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-white font-medium text-sm transition-all hover:scale-105 flex-shrink-0 shadow-soft"
+            title="设置"
           >
-            🚪
-          </button>
+            ⚙️
+          </NuxtLink>
           
           <PixelButton
             v-else
@@ -105,23 +105,6 @@
         </div>
       </nav>
       
-      <!-- Logout Confirmation Modal -->
-      <Transition name="modal">
-        <div 
-          v-if="showLogoutModal"
-          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          @click.self="showLogoutModal = false"
-        >
-          <div class="bg-card rounded-3xl shadow-soft-lg p-6 max-w-sm w-full mx-4">
-            <h3 class="text-xl font-bold text-text-title mb-4">确认登出</h3>
-            <p class="text-text-body mb-6">确定要登出吗？登出后需要重新登录。</p>
-            <div class="flex gap-3">
-              <PixelButton variant="primary" block @click="confirmLogout">确认登出</PixelButton>
-              <PixelButton variant="secondary" block @click="showLogoutModal = false">取消</PixelButton>
-            </div>
-          </div>
-        </div>
-      </Transition>
     </div>
   </header>
 </template>
@@ -182,7 +165,6 @@ const communityStore = useCommunityStore()
 const userStore = useUserStore()
 const isDropdownOpen = ref(false)
 const communities = ref<Community[]>([])
-const showLogoutModal = ref(false)
 
 const currentCommunityName = computed(() => {
   return communityStore.currentCommunity?.name || null
@@ -254,20 +236,4 @@ const navigateTo = (page: string) => {
   }
 }
 
-const handleLogoutClick = () => {
-  showLogoutModal.value = true
-}
-
-const confirmLogout = async () => {
-  showLogoutModal.value = false
-  await userStore.signout()
-  if (typeof window !== 'undefined') {
-    localStorage.clear()
-    sessionStorage.clear()
-  }
-  await router.replace('/auth/login')
-  if (typeof window !== 'undefined') {
-    window.location.href = '/auth/login'
-  }
-}
 </script>
