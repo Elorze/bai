@@ -34,19 +34,20 @@
     <section class="px-4 mt-6">
       <h3 class="text-sm font-bold text-text-body mb-2">账号</h3>
       <div class="bg-card rounded-2xl shadow-soft overflow-hidden border border-border">
-        <NuxtLink
-          to="/profile/setup"
-          class="flex items-center gap-3 px-4 py-4 border-b border-border active:bg-input-bg transition-colors"
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 px-4 py-4 border-b border-border active:bg-input-bg transition-colors text-left"
+          @click="openProfileModal"
         >
           <span class="w-10 h-10 rounded-xl bg-input-bg flex items-center justify-center text-xl">👤</span>
-          <div class="flex-1 text-left">
+          <div class="flex-1">
             <div class="font-medium text-text-title">个人信息</div>
             <div class="text-sm text-text-placeholder">点击修改基本信息</div>
           </div>
           <svg class="w-5 h-5 text-text-placeholder" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
-        </NuxtLink>
+        </button>
         <NuxtLink
           :to="walletLink"
           class="flex items-center gap-3 px-4 py-4 active:bg-input-bg transition-colors"
@@ -131,6 +132,91 @@
       </button>
     </div>
 
+    <!-- 个人信息弹窗（个人中心） -->
+    <Transition name="modal">
+      <div
+        v-if="showProfileModal"
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        @click.self="closeProfileModal"
+      >
+        <div class="bg-card rounded-3xl shadow-soft-lg max-w-sm w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-text-title mb-4">个人中心</h3>
+
+            <!-- 头像 -->
+            <div class="flex flex-col items-center mb-4">
+              <div class="relative">
+                <div v-if="profilePreviewUrl || profileForm.avatar" class="w-24 h-24 rounded-2xl border border-border overflow-hidden bg-input-bg">
+                  <img :src="profilePreviewUrl || profileForm.avatar" alt="头像" class="w-full h-full object-cover" />
+                </div>
+                <div v-else class="w-24 h-24 rounded-2xl border border-border bg-input-bg flex items-center justify-center">
+                  <span class="text-3xl">👤</span>
+                </div>
+              </div>
+              <input
+                ref="profileAvatarInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="onProfileAvatarChange"
+              />
+              <div class="flex gap-2 mt-2">
+                <PixelButton variant="secondary" size="sm" :disabled="profileUploading" @click="profileAvatarInput?.click()">
+                  {{ profileUploading ? '上传中...' : '更换头像' }}
+                </PixelButton>
+                <PixelButton v-if="profilePreviewUrl || profileForm.avatar" variant="secondary" size="sm" @click="clearProfileAvatar">
+                  清除
+                </PixelButton>
+              </div>
+              <p v-if="profileUploadError" class="text-destructive text-xs mt-1">{{ profileUploadError }}</p>
+            </div>
+
+            <!-- 昵称 -->
+            <div class="mb-4">
+              <label class="block text-sm font-bold text-text-body mb-1">昵称 *</label>
+              <input
+                v-model="profileForm.name"
+                type="text"
+                placeholder="输入昵称"
+                class="w-full h-11 px-3 bg-input-bg border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/20"
+                :disabled="profileSaving"
+              />
+            </div>
+
+            <!-- 个人简介 -->
+            <div class="mb-4">
+              <label class="block text-sm font-bold text-text-body mb-1">个人简介</label>
+              <textarea
+                v-model="profileForm.bio"
+                placeholder="介绍一下自己..."
+                rows="3"
+                class="w-full px-3 py-2 bg-input-bg border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                :disabled="profileSaving"
+              />
+            </div>
+
+            <!-- 身份信息（只读） -->
+            <div class="mb-4 p-3 bg-input-bg rounded-xl border border-border">
+              <div class="text-sm font-bold text-text-body mb-2">身份信息</div>
+              <div class="text-sm text-text-placeholder space-y-1">
+                <div>用户 ID：<span class="text-text-body">{{ displayUserId }}</span></div>
+                <div v-if="profileForm.userType">身份类型：<span class="text-text-body">{{ profileForm.userType === 'community' ? '社区' : '成员' }}</span></div>
+              </div>
+            </div>
+
+            <p v-if="profileError" class="text-destructive text-sm mb-3">{{ profileError }}</p>
+
+            <div class="flex gap-3">
+              <PixelButton variant="secondary" block @click="closeProfileModal" :disabled="profileSaving">取消</PixelButton>
+              <PixelButton variant="primary" block @click="saveProfile" :disabled="profileSaving || !profileForm.name?.trim() || profileUploading">
+                {{ profileSaving ? '保存中...' : '确认' }}
+              </PixelButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 登出确认弹窗 -->
     <Transition name="modal">
       <div
@@ -159,7 +245,28 @@ definePageMeta({
 
 const router = useRouter()
 const userStore = useUserStore()
+const toast = useToast()
+const { updateUserProfile, getMe } = useApi()
+const {
+  uploading: profileUploading,
+  previewUrl: profilePreviewUrl,
+  error: profileUploadError,
+  uploadFile: profileUploadFile,
+  clearPreview: clearProfilePreview
+} = useFileUpload()
+
 const showLogoutModal = ref(false)
+const showProfileModal = ref(false)
+const profileAvatarInput = ref<HTMLInputElement | null>(null)
+const profileSaving = ref(false)
+const profileError = ref<string | null>(null)
+
+const profileForm = reactive({
+  name: '',
+  bio: '',
+  avatar: '',
+  userType: '' as '' | 'member' | 'community'
+})
 
 const user = computed(() => userStore.user)
 
@@ -170,11 +277,88 @@ const shortAddress = computed(() => {
   return `${id.slice(0, 6)}...${id.slice(-4)}`
 })
 
+const displayUserId = computed(() => shortAddress.value)
+
 const walletLink = computed(() => {
   const id = user.value?.id
   if (!id) return '/'
   return `/member/${id}`
 })
+
+function openProfileModal() {
+  const u = userStore.user
+  if (!u) return
+  profileForm.name = u.name || ''
+  profileForm.bio = u.bio || ''
+  profileForm.avatar = u.avatar || ''
+  profileForm.userType = (u as any).userType || 'member'
+  profilePreviewUrl.value = u.avatar || null
+  profileError.value = null
+  showProfileModal.value = true
+}
+
+function closeProfileModal() {
+  showProfileModal.value = false
+  profileError.value = null
+  clearProfilePreview()
+}
+
+async function onProfileAvatarChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  const url = await profileUploadFile(file)
+  if (url) profileForm.avatar = url
+  target.value = ''
+}
+
+function clearProfileAvatar() {
+  clearProfilePreview()
+  profileForm.avatar = ''
+}
+
+async function saveProfile() {
+  const name = profileForm.name?.trim()
+  if (!name) {
+    profileError.value = '请输入昵称'
+    return
+  }
+  if (name.length > 50) {
+    profileError.value = '昵称不能超过50个字符'
+    return
+  }
+  const u = userStore.user
+  if (!u?.id) {
+    profileError.value = '用户信息获取失败，请重新登录'
+    return
+  }
+
+  profileSaving.value = true
+  profileError.value = null
+  try {
+    const result = await updateUserProfile(u.id, {
+      name,
+      bio: profileForm.bio?.trim() || undefined,
+      avatar: profileForm.avatar || undefined
+    })
+    if (result.success) {
+      const updatedUser = await getMe()
+      userStore.setUser({
+        ...updatedUser,
+        userType: (updatedUser as any).userType || 'member'
+      })
+      toast.add({ title: '保存成功', description: '个人信息已更新' })
+      closeProfileModal()
+    } else {
+      profileError.value = result.message || '保存失败，请重试'
+    }
+  } catch (err) {
+    console.error('Save profile error:', err)
+    profileError.value = '保存失败，请重试'
+  } finally {
+    profileSaving.value = false
+  }
+}
 
 const confirmLogout = async () => {
   showLogoutModal.value = false
