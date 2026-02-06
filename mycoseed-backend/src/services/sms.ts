@@ -1,8 +1,8 @@
 import Dysmsapi20170525, * as $Dysmsapi20170525 from '@alicloud/dysmsapi20170525'
 import * as $OpenApi from '@alicloud/openapi-client'
-import dotenv from 'dotenv'
 
-dotenv.config()
+// 注意：不再在这里调用 dotenv.config()
+// 环境变量已在 index.ts 中加载（开发环境）或由 Fly.io 提供（生产环境）
 
 const accessKeyId = process.env.ACCESS_KEY_ID
 const accessKeySecret = process.env.ACCESS_KEY_SECRET

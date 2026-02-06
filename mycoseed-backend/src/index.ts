@@ -1,12 +1,15 @@
+// 环境配置：必须在所有其他导入之前执行
+// 这会立即加载环境变量，确保后续导入的模块可以访问到环境变量
+import './config/env'
+
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import tasksRouter from './routes/tasks'
 import authRouter from './routes/auth'
 import uploadRouter from './routes/upload'
 import diagnosticsRouter from './routes/diagnostics'
 
-dotenv.config()
+const nodeEnv = process.env.NODE_ENV || 'development'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -23,7 +26,7 @@ const corsOptions = {
     ].filter(Boolean) // 过滤掉 undefined
     
     // 开发环境允许所有来源，生产环境只允许配置的域名
-    if (process.env.NODE_ENV === 'development' || !origin || allowedOrigins.includes(origin)) {
+    if (nodeEnv === 'development' || !origin || allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
@@ -40,7 +43,11 @@ app.use(express.urlencoded({extended:true}))
 
 // 健康检查
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'MycoSeed Backend API is running' })
+  res.json({ 
+    status: 'ok', 
+    message: 'MycoSeed Backend API is running',
+    environment: nodeEnv
+  })
 })
 
 // 测试上传路由是否可用
@@ -58,4 +65,5 @@ app.use('/api/diagnostics', diagnosticsRouter)  // 诊断路由（开发用）
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`)
   console.log(`📝 API endpoints available at http://localhost:${PORT}/api`)
+  console.log(`🌍 Environment: ${nodeEnv}`)
 })
