@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nuxt dev --host 0.0.0.0 --port 3003",
+    "dev": "NODE_ENV=development nuxt dev --host 0.0.0.0 --port 3003",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
