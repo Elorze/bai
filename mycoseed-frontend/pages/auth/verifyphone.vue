@@ -51,7 +51,12 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
-const phone = computed(() => route.query.phone as string || '')
+// 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+const phone = computed(() => {
+  const rawPhone = route.query.phone as string || ''
+  // 只保留数字字符
+  return rawPhone.replace(/\D/g, '')
+})
 const loading = ref(false)
 const countdown = ref(60)
 const toast = useToast()

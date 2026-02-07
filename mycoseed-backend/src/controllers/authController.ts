@@ -46,12 +46,22 @@ const generateCode = ():string =>
     return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
+// 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+const cleanPhoneNumber = (phone: string): string => {
+    if (!phone) return ''
+    // 只保留数字字符
+    return phone.replace(/\D/g, '')
+}
+
 // 发送验证码
 export const sendSMSController = async (req: Request, res: Response) =>
 {
     try
     {
-        const {phone} = req.body
+        const {phone: rawPhone} = req.body
+        
+        // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+        const phone = cleanPhoneNumber(rawPhone)
 
         if (!phone || !/^\d{11}$/.test(phone))
         {
@@ -110,11 +120,19 @@ export const signInController = async(req:Request, res:Response)=>
 {
     try
     {
-        const {phone,code}:SignInRequest = req.body
+        const {phone: rawPhone,code}:SignInRequest = req.body
 
-        if(!phone || !code)
+        if(!rawPhone || !code)
         {
             return res.status(400).json({result:'error', message:'Phone and code are required'})
+        }
+        
+        // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+        const phone = cleanPhoneNumber(rawPhone)
+        
+        if (!phone || !/^\d{11}$/.test(phone))
+        {
+            return res.status(400).json({result:'error', message:'Invalid phone number format'})
         }
 
         // 查找验证码
@@ -368,7 +386,10 @@ export interface RegisterRequest {
 
 export const registerController = async (req: Request, res: Response) => {
     try {
-        const { phone, email, password, name }: RegisterRequest = req.body
+        const { phone: rawPhone, email, password, name }: RegisterRequest = req.body
+        
+        // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+        const phone = rawPhone ? cleanPhoneNumber(rawPhone) : undefined
 
         // 验证：必须提供手机号或邮箱，以及密码
         if (!password || password.length < 6) {
@@ -496,7 +517,10 @@ export interface PasswordLoginRequest {
 
 export const passwordLoginController = async (req: Request, res: Response) => {
     try {
-        const { phone, email, password }: PasswordLoginRequest = req.body
+        const { phone: rawPhone, email, password }: PasswordLoginRequest = req.body
+        
+        // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+        const phone = rawPhone ? cleanPhoneNumber(rawPhone) : undefined
 
         if (!password) {
             return res.status(400).json({ 
@@ -592,16 +616,19 @@ export interface SetPasswordRequest {
 
 export const setPasswordController = async (req: Request, res: Response) => {
     try {
-        const { phone, code, password }: SetPasswordRequest = req.body
+        const { phone: rawPhone, code, password }: SetPasswordRequest = req.body
 
-        if (!phone || !code || !password) {
+        if (!rawPhone || !code || !password) {
             return res.status(400).json({ 
                 result: 'error', 
                 message: '手机号、验证码和密码都是必需的' 
             })
         }
+        
+        // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+        const phone = cleanPhoneNumber(rawPhone)
 
-        if (!/^\d{11}$/.test(phone)) {
+        if (!phone || !/^\d{11}$/.test(phone)) {
             return res.status(400).json({ 
                 result: 'error', 
                 message: '手机号格式不正确' 
