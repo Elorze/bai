@@ -6,8 +6,9 @@
     </UButton>
     <div class="flex flex-col items-center justify-center h-full gap-4 py-8 w-[80%] mx-auto">
       <h1 class="text-2xl font-bold">验证手机号</h1>
-      <div>请输入<span class="text-primary font-semibold mx-1">{{ phone.slice(0, 3) }}...{{ phone.slice(-4)
-        }}</span>收到的6位验证码</div>
+      <div>请输入<span class="text-primary font-semibold mx-1">
+        {{ phone.length >= 7 ? `${phone.slice(0, 3)}...${phone.slice(-4)}` : phone }}
+      </span>收到的6位验证码</div>
       <UForm :state="formState" @submit="onSubmit" class="w-full">
         <UFormField name="pin">
           <div class="flex gap-2 justify-center">
@@ -51,11 +52,16 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
+const config = useRuntimeConfig()
 // 清理手机号：只保留数字字符，防止 URL 参数中包含额外字符（如字母）
+// 防御性处理：先移除 ? 和 & 及其后面的内容（处理 URL 格式错误的情况）
+// 例如：如果 rawPhone 是 "19145787814?redirect=oauth"，先分割取第一部分
 const phone = computed(() => {
   const rawPhone = route.query.phone as string || ''
+  // 防御性处理：先移除 ? 和 & 及其后面的内容（处理 URL 格式错误的情况）
+  const cleaned = rawPhone.split('?')[0].split('&')[0]
   // 只保留数字字符
-  return rawPhone.replace(/\D/g, '')
+  return cleaned.replace(/\D/g, '')
 })
 const loading = ref(false)
 const countdown = ref(60)
@@ -115,7 +121,7 @@ const resendCode = async () => {
   if (countdown.value > 0) return
   
   try {
-    const baseUrl = getApiBaseUrl()
+    const baseUrl = config.public.apiUrl || getApiBaseUrl()
     await sendSMS(phone.value, baseUrl)
     toast.add({
       title: '验证码已重新发送'
@@ -134,7 +140,7 @@ const onSubmit = async () => {
   try {
     const validation = validatePin(formState.pin)
     if (validation === true) {
-      const baseUrl = getApiBaseUrl()
+      const baseUrl = config.public.apiUrl || getApiBaseUrl()
       const response = await signIn(phone.value, formState.pin.join(''), baseUrl)
       if (response.result === 'ok') {
         toast.add({
