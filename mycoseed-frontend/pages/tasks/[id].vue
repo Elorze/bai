@@ -123,7 +123,7 @@
                 
                 <!-- 第三行：时间信息 -->
                 <div class="flex justify-between items-center pb-2 border-b border-black/10 gap-4">
-                  <span class="text-text-body">任务领取时间:</span>
+                  <span class="text-text-body">任务开始时间:</span>
                   <span class="text-text-title font-medium">
                     {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
                   </span>
