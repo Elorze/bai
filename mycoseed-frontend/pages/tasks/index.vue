@@ -54,14 +54,17 @@
           @click="navigateTo(`/tasks/${item.id}`)"
         >
           <template #header>
-            <div class="flex justify-between items-start">
-              <span class="text-text-body text-sm">任务 #{{ item.id }}</span>
-               <span class="text-xs text-text-placeholder">{{ formatTimeAgo(item.createdAt || item.deadline) }}</span>
+            <div class="flex justify-between items-start gap-2">
+              <span class="text-text-body text-sm">发布者 {{ item.creator || '系统' }}</span>
+              <div class="flex flex-col items-end text-right">
+                <span class="text-xs text-text-placeholder">{{ formatTimeAgo(item.createdAt || item.deadline) }}</span>
+                <span v-if="item.submitDeadline" class="text-xs text-text-body mt-0.5">提交截止 {{ formatSubmitDeadline(item.submitDeadline) }}</span>
+              </div>
             </div>
           </template>
           
           <div class="flex gap-4">
-            <PixelAvatar :seed="item.creator || `user${item.id}`" size="md" />
+            <PixelAvatar :src="item.creatorAvatar || ''" :seed="item.creator || item.creatorId || `user${item.id}`" size="md" />
             <div class="flex-1">
               <h3 class="font-bold text-lg text-text-title">{{ item.title }}</h3>
               <p class="text-text-body text-sm line-clamp-2">{{ item.description }}</p>
@@ -158,8 +161,11 @@ interface TaskItem {
   status: string
   reward?: number
   deadline?: string
+  submitDeadline?: string
   createdAt?: string
   creator?: string
+  creatorId?: string
+  creatorAvatar?: string
   _task?: Task // 原始任务对象，用于判断是否失效
 }
 
@@ -274,8 +280,11 @@ const taskItems = computed<TaskItem[]>(() => {
     status: task.status,
     reward: task.reward,
     deadline: task.deadline || task.completedAt || task.updatedAt || task.createdAt || '',
+    submitDeadline: task.submitDeadline || '',
     createdAt: task.createdAt,
     creator: task.creatorName || '系统',
+    creatorId: task.creatorId,
+    creatorAvatar: task.creatorAvatar,
     // 添加原始任务对象，用于判断是否失效
     _task: task
   }))
@@ -445,6 +454,18 @@ const formatTimeAgo = (dateString: string): string => {
   }
 }
 
+// 格式化提交截止时间（用于卡片展示，显示为北京时间）
+const formatSubmitDeadline = (dateString: string): string => {
+  if (!dateString) return ''
+  const date = parseBeijingTime(dateString)
+  if (!date || isNaN(date.getTime())) return ''
+  const beijing = new Date(date.getTime() + 8 * 60 * 60 * 1000)
+  const month = beijing.getUTCMonth() + 1
+  const day = beijing.getUTCDate()
+  const hour = beijing.getUTCHours()
+  const minute = beijing.getUTCMinutes()
+  return `${month}月${day}日 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
 
 // 组件挂载时加载数据
 onMounted(async () => {

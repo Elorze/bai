@@ -1086,7 +1086,9 @@ const confirmReject = async () => {
     console.log('[FRONTEND] 审核驳回 - 选项:', selectedOption, '最终选项:', finalOption)
     console.log('[FRONTEND] 审核驳回 - 理由:', reviewResult.value.comments)
     
-    const result = await rejectTask(taskId, reviewResult.value.comments, baseUrl, finalOption)
+    // 使用当前选中提交的任务ID（多人任务中每个人的时间线独立）
+    const targetTaskId = currentSubmission.value?.taskId || taskId
+    const result = await rejectTask(targetTaskId, reviewResult.value.comments, baseUrl, finalOption)
     
     console.log('[FRONTEND] 审核驳回 - 结果:', result)
     

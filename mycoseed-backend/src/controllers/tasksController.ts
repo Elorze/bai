@@ -316,7 +316,7 @@ const mapDbTaskToTask = (
   taskInfo?: any,
   taskTimeline?: any,
   taskProof?: any
-): Task & { creatorName?: string; claimerId?: string; claimerName?: string } => {
+): Task & { creatorName?: string; creatorAvatar?: string; claimerId?: string; claimerName?: string } => {
   // 从 task_info 或 dbTask 中获取基本信息
   const info = taskInfo || dbTask.task_info || {}
   
@@ -398,6 +398,7 @@ const mapDbTaskToTask = (
     assignedUserId: info.assigned_user_id || null,  // 指定参与人员ID（向后兼容）
     // 用户信息
     creatorName: dbTask.creator?.name || null,
+    creatorAvatar: dbTask.creator?.avatar || null,
   claimerName: dbTask.claimer?.name || null
   }
 }
@@ -676,24 +677,26 @@ export const getAllTasks = async (req: Request, res: Response) => {
         }
       }
   
-      // 获取所有创建者ID和领取者ID
-      const creatorIds = [...new Set(tasksData.filter(t => t.creator_id).map(t => t.creator_id))]
+      // 获取所有创建者ID和领取者ID（含 task_info 的 creator_id，确保任务卡片能拿到发布者头像）
+      const creatorIdsFromTasks = [...new Set(tasksData.filter(t => t.creator_id).map(t => t.creator_id))]
+      const creatorIdsFromInfo = [...new Set(Object.values(taskInfoMap).filter((info: any) => info.creator_id).map((info: any) => info.creator_id))]
+      const creatorIds = [...new Set([...creatorIdsFromTasks, ...creatorIdsFromInfo])]
       const claimerIds = [...new Set(tasksData.filter(t => t.claimer_id).map(t => t.claimer_id))]
       const allUserIds = [...new Set([...creatorIds, ...claimerIds])]
       
-      // 批量获取用户信息
-      let usersMap: Record<string, { id: string; name: string }> = {}
+      // 批量获取用户信息（含头像，用于任务卡片展示）
+      let usersMap: Record<string, { id: string; name: string; avatar?: string }> = {}
       if (allUserIds.length > 0) {
         const { data: usersData } = await supabase
           .from('users')
-          .select('id, name')
+          .select('id, name, avatar')
           .in('id', allUserIds)
         
         if (usersData) {
           usersMap = usersData.reduce((acc, user) => {
             acc[user.id] = user
             return acc
-          }, {} as Record<string, { id: string; name: string }>)
+          }, {} as Record<string, { id: string; name: string; avatar?: string }>)
         }
       }
       
@@ -708,10 +711,11 @@ export const getAllTasks = async (req: Request, res: Response) => {
         })
         .map(task => {
           const taskInfo = taskInfoMap[task.task_info_id]
+          const creatorUser = (task.creator_id ? usersMap[task.creator_id] : null) || (taskInfo?.creator_id ? usersMap[taskInfo.creator_id] : null)
           return {
         ...task,
             task_info: taskInfo,
-            creator: task.creator_id ? usersMap[task.creator_id] : null,
+            creator: creatorUser,
             claimer: task.claimer_id ? usersMap[task.claimer_id] : null,
             task_timeline: timelinesMap[task.id] || { timeline: [] },
             task_proof: proofsMap[task.id] || null
@@ -1300,9 +1304,18 @@ export const claimTask = async (req: AuthRequest, res: Response) =>
             }
         }
 
-        // 检查是否指定了参与人员（允许创建者领取自己的任务）
+        // 检查是否指定了参与人员（创建者也不能领取指定给其他人的任务）
         if (taskInfo?.assigned_user_id) {
-            if (taskInfo.assigned_user_id !== user.id && taskInfo.creator_id !== user.id) {
+            if (taskInfo.assigned_user_id !== user.id) {
+                return res.status(403).json({ success: false, message: '此任务已指定给其他用户，您无法领取' })
+            }
+        }
+        
+        // 检查是否指定了多个参与人员（多人任务，从proof_config中读取）
+        const assignedUserIds = (taskInfo?.proof_config as any)?._assignedUserIds || (taskInfo?.assigned_user_id ? [taskInfo.assigned_user_id] : [])
+        if (assignedUserIds.length > 0) {
+            // 如果是多人任务，检查用户是否在指定列表中
+            if (!assignedUserIds.includes(user.id)) {
                 return res.status(403).json({ success: false, message: '此任务已指定给其他用户，您无法领取' })
             }
         }
@@ -1874,50 +1887,24 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             })
         }
 
-        // 获取该任务组的所有已提交的任务行（通过检查 task_proofs 表）
-        let tasksToReject: any[] = []
-        if (task.task_info_id) {
-            // 获取所有已提交的任务
-            const { data: allTasks } = await supabase
-                .from('tasks')
-                .select('id, status')
-                .eq('task_info_id', task.task_info_id)
-                .eq('status', 'submitted')
-            
-            // 检查这些任务是否都有 proof
-            if (allTasks && allTasks.length > 0) {
-                const taskIds = allTasks.map(t => t.id)
-                const { data: proofsData } = await supabase
-                    .from('task_proofs')
-                    .select('task_id')
-                    .in('task_id', taskIds)
-                    .not('proof', 'is', null)
-                
-                const tasksWithProof = allTasks.filter(t => 
-                    proofsData?.some(p => p.task_id === t.id)
-                )
-                tasksToReject = tasksWithProof
-            }
-        } else {
-            // 单个任务：检查是否有 proof
-            const { data: proofData } = await supabase
-                .from('task_proofs')
-                .select('task_id')
-                .eq('task_id', id)
-                .not('proof', 'is', null)
-                .single()
-            
-            if (proofData) {
-                tasksToReject = [task]
-            }
-        }
+        // 只驳回传入的单个任务行，不获取所有任务行（多人任务中每个人的时间线独立）
+        // 检查该任务行是否有 proof
+        const { data: proofData } = await supabase
+            .from('task_proofs')
+            .select('task_id')
+            .eq('task_id', id)
+            .not('proof', 'is', null)
+            .single()
         
-        if (tasksToReject.length === 0) {
+        if (!proofData) {
             return res.status(400).json({
                 success: false,
-                message: '没有找到已提交的任务，无法审核'
+                message: '该任务尚未提交凭证，无法审核'
             })
         }
+        
+        // 只驳回当前任务行
+        const tasksToReject = [task]
 
         // 获取用户信息
         const { data: userData } = await supabase
@@ -1982,21 +1969,12 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             return
         } else if (normalizedOption === 'reclaim') {
             // 重新发布任务：状态改为 unclaimed，清除 claimer_id 和 proof
-            // 获取所有相关任务行（包括未提交的）
-            let allTaskIds: string[] = []
-            if (task.task_info_id) {
-                const { data: allTasks } = await supabase
-                    .from('tasks')
-                    .select('id')
-                    .eq('task_info_id', task.task_info_id)
-                
-                allTaskIds = allTasks?.map(t => t.id) || []
-        } else {
-                allTaskIds = [id]
-        }
+            // 只更新当前任务行（多人任务中每个人的时间线独立）
+            const taskIdToUpdate = id
 
-            // 更新所有相关任务行状态
-            for (const taskId of allTaskIds) {
+            // 更新当前任务行状态
+            {
+                const taskId = taskIdToUpdate
                 // 更新 tasks 表：清除 claimer_id，设置状态为 unclaimed
                 const { error: updateError } = await supabase
             .from('tasks')
