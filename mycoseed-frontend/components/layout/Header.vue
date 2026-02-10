@@ -58,13 +58,6 @@
       <!-- Navigation -->
       <nav class="flex items-center gap-4">
         <PixelButton variant="warning" size="sm" @click="navigateTo('tasks')">🛒 商城</PixelButton>
-        <PixelButton
-          :variant="currentPage === 'wallet' ? 'primary' : 'secondary'"
-          size="sm"
-          @click="navigateTo('wallet')"
-        >
-          👛 钱包
-        </PixelButton>
 
         <div class="flex items-center gap-2">
           <div 

@@ -25,9 +25,7 @@
           </template>
           
           <p class=" text-lg text-text-title mb-6">
-            <span v-if="requiresFileUpload && requiresGPS">请上传文件并验证位置</span>
-            <span v-else-if="requiresFileUpload">请上传您的任务完成证明和相关文件</span>
-            <span v-else-if="requiresGPS">请验证您的位置信息</span>
+            <span v-if="requiresFileUpload">请上传您的任务完成证明和相关文件</span>
             <span v-else-if="requiresDescription">请填写任务完成说明</span>
             <span v-else>请提交任务</span>
           </p>
@@ -151,8 +149,8 @@
               </div>
             </div>
 
-            <!-- GPS定位验证 -->
-            <div v-if="requiresGPS" class="pt-4 border-t border-border">
+            <!-- 位置定位验证：暂未开放，已隐藏 -->
+            <div v-if="false && requiresGPS" class="pt-4 border-t border-border">
               <h3 class="font-bold text-xs uppercase text-text-title mb-4">位置定位验证</h3>
               <div class="space-y-3">
                 <div v-if="!gpsLocation.latitude" class="p-4 bg-card border border-border rounded-2xl shadow-soft">

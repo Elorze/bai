@@ -267,8 +267,8 @@
                 </div>
               </div>
 
-              <!-- GPS定位 -->
-              <div class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
+              <!-- 位置定位：暂未开放，隐藏 -->
+              <div v-if="false" class="p-3 md:p-4 bg-gray-50 border border-border rounded-2xl shadow-soft">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
                     <span class="text-xl md:text-2xl">📍</span>

@@ -55,20 +55,29 @@
         >
           <template #header>
             <div class="flex justify-between items-start gap-2">
-              <span class="text-text-body text-sm">发布者 {{ item.creator || '系统' }}</span>
-              <div class="flex flex-col items-end text-right">
+              <div class="flex items-center gap-2 min-w-0">
+                <PixelAvatar
+                  v-if="item.creatorAvatar"
+                  :src="item.creatorAvatar"
+                  size="sm"
+                />
+                <PixelAvatar
+                  v-else
+                  :seed="item.creator || '系统'"
+                  size="sm"
+                />
+                <span class="text-text-body text-sm truncate">发布者 {{ item.creator || '系统' }}</span>
+              </div>
+              <div class="flex flex-col items-end text-right flex-shrink-0">
                 <span class="text-xs text-text-placeholder">{{ formatTimeAgo(item.createdAt || item.deadline) }}</span>
                 <span v-if="item.submitDeadline" class="text-xs text-text-body mt-0.5">提交截止 {{ formatSubmitDeadline(item.submitDeadline) }}</span>
               </div>
             </div>
           </template>
           
-          <div class="flex gap-4">
-            <PixelAvatar :src="item.creatorAvatar || ''" :seed="item.creator || item.creatorId || `user${item.id}`" size="md" />
-            <div class="flex-1">
-              <h3 class="font-bold text-lg text-text-title">{{ item.title }}</h3>
-              <p class="text-text-body text-sm line-clamp-2">{{ item.description }}</p>
-            </div>
+          <div>
+            <h3 class="font-bold text-lg text-text-title">{{ item.title }}</h3>
+            <p class="text-text-body text-sm line-clamp-2 mt-1">{{ item.description }}</p>
           </div>
 
           <template #footer>

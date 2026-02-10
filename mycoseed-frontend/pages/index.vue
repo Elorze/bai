@@ -1,5 +1,10 @@
 <template>
   <div class="space-y-8">
+    <!-- 开发中提示 -->
+    <div class="text-center py-3 px-4 bg-amber-100 border border-amber-400 rounded-2xl text-amber-800 text-sm">
+      当前页尚在开发中请稍候
+    </div>
+
     <!-- 如果没有选择社区，显示提示 -->
     <div v-if="!communityStore.currentCommunityId" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
       <p class="text-lg text-text-body mb-4">请先选择一个社区</p>
