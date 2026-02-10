@@ -1113,8 +1113,17 @@ const confirmReject = async () => {
     console.log('[FRONTEND] 审核驳回 - 选项:', selectedOption, '最终选项:', finalOption)
     console.log('[FRONTEND] 审核驳回 - 理由:', reviewResult.value.comments)
     
-    // 使用当前选中提交的任务ID（多人任务中每个人的时间线独立）
-    const targetTaskId = currentSubmission.value?.taskId || taskId
+    // 必须使用当前选中提交对应的任务行 ID，多人任务下禁止用路由 taskId（可能是代表任务 id，会误伤其他人）
+    const targetTaskId = currentSubmission.value?.taskId || (task.value.participantLimit && task.value.participantLimit > 1 ? '' : taskId)
+    if (!targetTaskId) {
+      toast.add({
+        title: '无法驳回',
+        description: '请先选择要驳回的提交（当前选中的参与者）',
+        color: 'red'
+      })
+      isSubmitting.value = false
+      return
+    }
     const result = await rejectTask(targetTaskId, reviewResult.value.comments, baseUrl, finalOption)
     
     console.log('[FRONTEND] 审核驳回 - 结果:', result)

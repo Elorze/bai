@@ -1923,9 +1923,10 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
         const now = new Date().toISOString()
 
         if (normalizedOption === 'resubmit') {
-            // 重新提交证明：仅将当前选中的这一条任务行改为 unsubmit（已领取但未提交）
-            // 多人任务中只驳回当前参与者，不影响同任务下其他已提交的参与者
-            const taskIdToUpdate = id
+            // 重新提交证明：仅更新本条任务行（req.params.id），不按 task_info_id 批量、不联动其他参与者
+            // 只改 tasks / task_timelines / task_proofs 中 task_id = id 的这一条
+            const taskIdToUpdate = String(id).trim()
+            console.log(`[REJECT] resubmit 仅作用于任务行 id=${taskIdToUpdate}，不联动同 task_info 下其他行`)
 
             await updateTaskStatus(
                 taskIdToUpdate,
@@ -1938,15 +1939,13 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
 
             const { error: proofError } = await supabase
                 .from('task_proofs')
-                .upsert({
-                    task_id: taskIdToUpdate,
+                .update({
                     proof: null,
                     reject_reason: reason.trim(),
                     reject_option: 'resubmit',
                     updated_at: now
-                }, {
-                    onConflict: 'task_id'
                 })
+                .eq('task_id', taskIdToUpdate)
 
             if (proofError) {
                 console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
@@ -1959,52 +1958,46 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             })
             return
         } else if (normalizedOption === 'reclaim') {
-            // 重新发布任务：仅将当前参与者的这一条任务行改为 unclaimed，清除 claimer_id 和 proof
-            // 多人任务中只释放当前驳回者的席位，不影响其他参与者的任务行
-            const taskIdToUpdate = id
+            // 重新发布任务：仅更新本条任务行（req.params.id），不按 task_info_id 批量、不联动其他参与者
+            // 只改 tasks / task_timelines / task_proofs 中 id = id 的这一条，同一多人任务下其他人状态不变
+            const taskIdToUpdate = String(id).trim()
+            console.log(`[REJECT] reclaim 仅作用于任务行 id=${taskIdToUpdate}，不联动同 task_info 下其他行`)
 
-            // 更新当前任务行状态
-            {
-                const taskId = taskIdToUpdate
-                // 更新 tasks 表：清除 claimer_id，设置状态为 unclaimed
-                const { error: updateError } = await supabase
-            .from('tasks')
-                    .update({
-                        claimer_id: null,
-                        status: 'unclaimed',
-                        updated_at: now
-                    })
-                    .eq('id', taskId)
+            // 更新 tasks 表：仅本条任务行
+            const { error: updateError } = await supabase
+                .from('tasks')
+                .update({
+                    claimer_id: null,
+                    status: 'unclaimed',
+                    updated_at: now
+                })
+                .eq('id', taskIdToUpdate)
 
-                if (updateError) {
-                    console.error(`[REJECT] ❌ 更新任务状态失败:`, updateError)
-                    throw updateError
-                }
-                
-                // 更新 task_proofs 表：清除 proof，保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        proof: null, // 清除凭证
-                        reject_reason: reason.trim(),
-                        reject_option: 'reclaim',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
-                
-                // 追加状态到时间线
-                await appendStatusToTimeline(taskId, 'reclaim', user.id, userName, '审核驳回', reason.trim())
-                await appendStatusToTimeline(taskId, 'unclaimed', user.id, userName, '重新发布')
+            if (updateError) {
+                console.error(`[REJECT] ❌ 更新任务状态失败:`, updateError)
+                throw updateError
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (reclaim) ==========\n`)
+
+            // 更新 task_proofs 表：仅本条（用 update+eq，确保只改一行）
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .update({
+                    proof: null,
+                    reject_reason: reason.trim(),
+                    reject_option: 'reclaim',
+                    updated_at: now
+                })
+                .eq('task_id', taskIdToUpdate)
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
+            }
+
+            // 只给本条任务行追加时间线
+            await appendStatusToTimeline(taskIdToUpdate, 'reclaim', user.id, userName, '审核驳回', reason.trim())
+            await appendStatusToTimeline(taskIdToUpdate, 'unclaimed', user.id, userName, '重新发布')
+
+            console.log(`[REJECT] ========== 审核驳回完成 (reclaim)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
             success: true,
                 message: '任务已驳回，已重新发布'
