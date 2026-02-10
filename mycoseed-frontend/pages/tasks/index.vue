@@ -76,7 +76,9 @@
           </template>
           
           <div>
-            <h3 class="font-bold text-lg text-text-title">{{ item.title }}</h3>
+            <h3 class="font-bold text-lg text-text-title">
+              {{ item.title }}{{ Number(item._task?.participantLimit) > 1 ? '（多人任务）' : '' }}
+            </h3>
             <p class="text-text-body text-sm line-clamp-2 mt-1">{{ item.description }}</p>
           </div>
 

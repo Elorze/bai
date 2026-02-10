@@ -394,6 +394,32 @@
       </div>
     </div>
 
+    <!-- 凭证图片预览弹层 -->
+    <Teleport to="body">
+      <div
+        v-if="previewImageUrl"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+        @click.self="previewImageUrl = null"
+      >
+        <div class="relative max-w-[90vw] max-h-[90vh] bg-card rounded-2xl shadow-soft overflow-hidden">
+          <img
+            v-if="previewImageUrl"
+            :src="previewImageUrl"
+            alt="预览"
+            class="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+            @click.stop
+          />
+          <button
+            type="button"
+            class="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+            aria-label="关闭"
+            @click="previewImageUrl = null"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -439,6 +465,7 @@ const transferData = ref<{
   creatorId: string
 } | null>(null)
 const isTransferring = ref(false)
+const previewImageUrl = ref<string | null>(null)
 
 // 标记转账相关状态
 const isMarkingTransfer = ref(false)
@@ -692,8 +719,8 @@ const previewFile = (file: { name: string; url: string }) => {
     // 文本文件预览：在新窗口打开
     window.open(file.url, '_blank')
   } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension)) {
-    // 图片预览：在新窗口打开
-    window.open(file.url, '_blank')
+    // 图片预览：在页面内弹层大图预览
+    previewImageUrl.value = file.url
   } else if (extension === 'pdf') {
     // PDF预览：在新窗口打开
     window.open(file.url, '_blank')

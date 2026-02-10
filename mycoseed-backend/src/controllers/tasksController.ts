@@ -1887,7 +1887,8 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             })
         }
 
-        // 只驳回传入的单个任务行，不获取所有任务行（多人任务中每个人的时间线独立）
+        // 仅驳回传入的单个任务行 id（多人任务中只驳回当前选中的参与者，不牵连同任务其他参与者）
+        // resubmit / reclaim / rejected 均只作用于本条 task 行，不使用 task_info_id 批量操作
         // 检查该任务行是否有 proof
         const { data: proofData } = await supabase
             .from('task_proofs')
@@ -1902,9 +1903,6 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
                 message: '该任务尚未提交凭证，无法审核'
             })
         }
-        
-        // 只驳回当前任务行
-        const tasksToReject = [task]
 
         // 获取用户信息
         const { data: userData } = await supabase
@@ -1925,51 +1923,44 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
         const now = new Date().toISOString()
 
         if (normalizedOption === 'resubmit') {
-            // 重新提交证明：状态改为 unsubmit（已领取但未提交）
-            // 清除 task_proofs 中的 proof，保留 reject_reason 和 reject_option
-            
-            const taskIds = tasksToReject.map(t => t.id)
-            
-            // 更新所有相关任务行状态
-            for (const taskId of taskIds) {
-                // 更新 tasks 表状态
-                await updateTaskStatus(
-                    taskId,
-                    'unsubmit',
-                    user.id,
-                    userName,
-                    '审核驳回',
-                    reason.trim()
-                )
-                
-                // 更新 task_proofs 表：清除 proof，保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        proof: null, // 清除凭证
-                        reject_reason: reason.trim(),
-                        reject_option: 'resubmit',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
+            // 重新提交证明：仅将当前选中的这一条任务行改为 unsubmit（已领取但未提交）
+            // 多人任务中只驳回当前参与者，不影响同任务下其他已提交的参与者
+            const taskIdToUpdate = id
+
+            await updateTaskStatus(
+                taskIdToUpdate,
+                'unsubmit',
+                user.id,
+                userName,
+                '审核驳回',
+                reason.trim()
+            )
+
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .upsert({
+                    task_id: taskIdToUpdate,
+                    proof: null,
+                    reject_reason: reason.trim(),
+                    reject_option: 'resubmit',
+                    updated_at: now
+                }, {
+                    onConflict: 'task_id'
+                })
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (resubmit) ==========\n`)
+
+            console.log(`[REJECT] ========== 审核驳回完成 (resubmit)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
                 success: true,
                 message: '任务已驳回，请重新提交证明'
             })
             return
         } else if (normalizedOption === 'reclaim') {
-            // 重新发布任务：状态改为 unclaimed，清除 claimer_id 和 proof
-            // 只更新当前任务行（多人任务中每个人的时间线独立）
+            // 重新发布任务：仅将当前参与者的这一条任务行改为 unclaimed，清除 claimer_id 和 proof
+            // 多人任务中只释放当前驳回者的席位，不影响其他参与者的任务行
             const taskIdToUpdate = id
 
             // 更新当前任务行状态
@@ -2020,41 +2011,34 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             })
             return
         } else if (normalizedOption === 'rejected') {
-            // 终止任务：状态改为 rejected，任务关闭并放入已失效
-            
-            const taskIds = tasksToReject.map(t => t.id)
-            
-            // 更新所有相关任务行状态
-            for (const taskId of taskIds) {
-                // 更新 tasks 表状态
-                await updateTaskStatus(
-                    taskId,
-                    'rejected',
-                    user.id,
-                    userName,
-                    '审核驳回',
-                    reason.trim()
-                )
-                
-                // 更新 task_proofs 表：保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        reject_reason: reason.trim(),
-                        reject_option: 'rejected',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
+            // 终止任务：仅将当前选中的这一条任务行改为 rejected（多人任务中只终止当前参与者，不关闭整个任务）
+            const taskIdToUpdate = id
+
+            await updateTaskStatus(
+                taskIdToUpdate,
+                'rejected',
+                user.id,
+                userName,
+                '审核驳回',
+                reason.trim()
+            )
+
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .upsert({
+                    task_id: taskIdToUpdate,
+                    reject_reason: reason.trim(),
+                    reject_option: 'rejected',
+                    updated_at: now
+                }, {
+                    onConflict: 'task_id'
+                })
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (rejected) ==========\n`)
+
+            console.log(`[REJECT] ========== 审核驳回完成 (rejected)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
                 success: true,
                 message: '任务已驳回，已终止'
