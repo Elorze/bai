@@ -1,15 +1,15 @@
-# fly.toml app configuration file generated for mycoseed-backend on 2026-02-05T13:23:25Z
+# fly.toml app configuration file generated for mycoseed-backend on 2026-02-10T15:00:06Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'mycoseed-backend'
-primary_region = 'iad'
+primary_region = 'syd'
 
 [build]
 
 [http_service]
-  internal_port = 3001
+  internal_port = 8080
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
