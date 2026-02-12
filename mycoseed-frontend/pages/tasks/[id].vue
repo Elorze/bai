@@ -121,16 +121,25 @@
                   <span class="text-text-title font-medium">{{ task.claimerName }}</span>
                 </div>
                 
-                <!-- 第三行：时间信息 -->
-                <div class="flex justify-between items-center pb-2 border-b border-black/10 gap-4">
-                  <span class="text-text-body">任务开始时间:</span>
-                  <span class="text-text-title font-medium">
-                    {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
-                  </span>
-                  <span class="text-text-body">领取截止时间:</span>
-                  <span class="text-text-title font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
-                  <span class="text-text-body">提交截止时间:</span>
-                  <span class="text-text-title font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
+                <!-- 时间信息：手机端三行，电脑端一行 -->
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center pb-2 border-b border-black/10 gap-2 md:gap-4">
+                  <!-- 任务开始时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">任务开始时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">
+                      {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
+                    </span>
+                  </div>
+                  <!-- 领取截止时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">领取截止时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
+                  </div>
+                  <!-- 提交截止时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">提交截止时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
+                  </div>
                 </div>
               </div>
             </div>
