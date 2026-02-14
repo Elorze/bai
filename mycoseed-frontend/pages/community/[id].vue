@@ -1,5 +1,10 @@
 <template>
   <div class="space-y-8">
+    <!-- 开发中提示 -->
+    <div class="text-center py-3 px-4 bg-amber-100 border border-amber-400 rounded-2xl text-amber-800 text-sm">
+      当前页尚在开发中请稍候
+    </div>
+
     <!-- Village Header -->
     <div 
       class="relative h-48 md:h-64 w-full bg-gradient-to-br from-primary to-accent overflow-hidden rounded-3xl shadow-soft border border-border cursor-pointer hover:opacity-90 transition-opacity"

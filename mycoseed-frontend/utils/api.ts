@@ -91,6 +91,7 @@ export interface Task {
   discountReason?: string        // 打折理由
   creatorId?: string             // 创建者ID (UUID)
   creatorName?: string           // 创建者名称
+  creatorAvatar?: string         // 创建者头像 URL
   claimerId?: string             // 接单者ID (UUID)（单人任务）
   claimerName?: string           // 接单者名称（单人任务）
   assignedUserId?: string        // 指定参与人员ID（可选，如果指定，则只有该用户可以领取）

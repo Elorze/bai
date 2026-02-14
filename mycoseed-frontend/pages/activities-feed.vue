@@ -8,7 +8,7 @@
       >
         <span class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="text-base">📅</span>
-          <span>发起活动</span>
+          <span>发起活动（当前页面尚在开发中）</span>
         </span>
       </PixelButton>
     </div>

@@ -50,41 +50,75 @@
           v-for="item in filteredItems"
           :key="`task-${item.id}`"
           hover
-          class="cursor-pointer"
+          class="cursor-pointer task-card-container"
           @click="navigateTo(`/tasks/${item.id}`)"
         >
           <template #header>
-            <div class="flex justify-between items-start">
-              <span class="text-text-body text-sm">任务 #{{ item.id }}</span>
-               <span class="text-xs text-text-placeholder">{{ formatTimeAgo(item.createdAt || item.deadline) }}</span>
+            <div class="flex justify-between items-center gap-2">
+              <!-- 左侧：头像 + 名字在上，发布时间在下 -->
+              <div class="flex items-start gap-2 min-w-0 flex-1">
+                <div class="flex-shrink-0">
+                  <PixelAvatar
+                    v-if="item.creatorAvatar"
+                    :src="item.creatorAvatar"
+                    size="sm"
+                    class="rounded-full"
+                  />
+                  <PixelAvatar
+                    v-else
+                    :seed="item.creator || '系统'"
+                    size="sm"
+                    class="rounded-full"
+                  />
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-text-body text-sm font-medium truncate">{{ item.creator || '系统' }}</span>
+                  <span class="text-xs text-text-placeholder mt-0.5">发布于 {{ formatTimeAgo(item.createdAt || item.deadline) }}</span>
+                </div>
+              </div>
+              <!-- 右侧：状态标签 -->
+              <div class="flex-shrink-0">
+                <span class="text-xs bg-input-bg text-text-body px-2 py-1 rounded-xl font-medium">{{ getTaskStatusText(item.status, item._task) }}</span>
+              </div>
             </div>
           </template>
           
-          <div class="flex gap-4">
-            <PixelAvatar :seed="item.creator || `user${item.id}`" size="md" />
-            <div class="flex-1">
-              <h3 class="font-bold text-lg text-text-title">{{ item.title }}</h3>
-              <p class="text-text-body text-sm line-clamp-2">{{ item.description }}</p>
+          <div class="task-card-content">
+            <h3 class="font-bold text-lg text-text-title line-clamp-1">{{ item.title }}</h3>
+            <p class="text-text-body text-sm line-clamp-2 mt-1">{{ item.description }}</p>
+            <!-- 多人任务标签 -->
+            <div v-if="Number(item._task?.participantLimit) > 1" class="mt-2 flex gap-2">
+              <span class="text-xs bg-gray-100 text-text-body px-2 py-1 rounded-lg border border-border">多人任务</span>
             </div>
           </div>
 
           <template #footer>
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="text-primary font-bold flex items-center gap-1">
-                  <div class="w-3 h-3 bg-primary rounded-full"></div>
-                  {{ item.reward || 0 }} 积分
-                </div>
-                <span class="text-xs bg-input-bg text-text-body px-2 py-1 rounded-xl font-medium">{{ getTaskStatusText(item.status, item._task) }}</span>
+            <div class="flex items-center justify-between w-full">
+              <!-- 左侧：积分 -->
+              <div class="text-primary font-bold flex items-center gap-1">
+                <div class="w-3 h-3 bg-primary rounded-full"></div>
+                {{ item.reward || 0 }} 积分
               </div>
-              <PixelButton 
-                v-if="item.status === 'unclaimed'"
-                size="sm" 
-                variant="secondary"
-                @click.stop="navigateTo(`/tasks/${item.id}`)"
-              >
-                查看详情
-              </PixelButton>
+              <!-- 右侧：倒计时 + 右箭头按钮（固定在右下角） -->
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <div v-if="item.deadline" class="flex items-center gap-1 text-xs text-text-body">
+                  <!-- 灰色极简时钟图标 -->
+                  <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke-width="1.5" stroke="currentColor" fill="none"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l4 2" stroke="currentColor"/>
+                  </svg>
+                  <span>{{ formatDeadlineCountdown(item.deadline || '') }}</span>
+                </div>
+                <button
+                  class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/80 transition-colors flex-shrink-0"
+                  @click.stop="navigateTo(`/tasks/${item.id}`)"
+                  aria-label="查看详情"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </template>
         </PixelCard>
@@ -158,8 +192,11 @@ interface TaskItem {
   status: string
   reward?: number
   deadline?: string
+  submitDeadline?: string
   createdAt?: string
   creator?: string
+  creatorId?: string
+  creatorAvatar?: string
   _task?: Task // 原始任务对象，用于判断是否失效
 }
 
@@ -274,8 +311,11 @@ const taskItems = computed<TaskItem[]>(() => {
     status: task.status,
     reward: task.reward,
     deadline: task.deadline || task.completedAt || task.updatedAt || task.createdAt || '',
+    submitDeadline: task.submitDeadline || '',
     createdAt: task.createdAt,
     creator: task.creatorName || '系统',
+    creatorId: task.creatorId,
+    creatorAvatar: task.creatorAvatar,
     // 添加原始任务对象，用于判断是否失效
     _task: task
   }))
@@ -445,6 +485,48 @@ const formatTimeAgo = (dateString: string): string => {
   }
 }
 
+// 格式化提交截止时间（用于卡片展示，显示为北京时间）
+const formatSubmitDeadline = (dateString: string): string => {
+  if (!dateString) return ''
+  const date = parseBeijingTime(dateString)
+  if (!date || isNaN(date.getTime())) return ''
+  const beijing = new Date(date.getTime() + 8 * 60 * 60 * 1000)
+  const month = beijing.getUTCMonth() + 1
+  const day = beijing.getUTCDate()
+  const hour = beijing.getUTCHours()
+  const minute = beijing.getUTCMinutes()
+  return `${month}月${day}日 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+// 格式化领取截止时间倒计时（显示为"X年后"、"X天后"、"X小时后"）
+const formatDeadlineCountdown = (deadlineString: string): string => {
+  if (!deadlineString) return ''
+  
+  const deadline = parseBeijingTime(deadlineString)
+  if (!deadline) return ''
+  
+  const now = getCurrentBeijingDate()
+  const diffMs = deadline.getTime() - now.getTime()
+  
+  if (diffMs <= 0) {
+    return '已截止'
+  }
+  
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+  const diffYears = Math.floor(diffMs / (365.25 * 86400000))
+  
+  if (diffYears > 0) {
+    return `${diffYears}年后`
+  } else if (diffDays > 0) {
+    return `${diffDays}天后`
+  } else if (diffHours > 0) {
+    return `${diffHours}小时后`
+  } else {
+    return diffMins > 0 ? `${diffMins}分钟后` : '即将截止'
+  }
+}
 
 // 组件挂载时加载数据
 onMounted(async () => {
@@ -462,11 +544,49 @@ watch(() => route.fullPath, () => {
 </script>
 
 <style scoped>
+/* 任务卡片容器：使用flex布局，header在顶部，footer在底部 */
+.task-card-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.task-card-container :deep(.relative) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.task-card-container :deep([class*="border-b"]) {
+  flex-shrink: 0;
+}
+
+.task-card-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.task-card-container :deep([class*="border-t"]) {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 1;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 2;
 }
 </style>
 

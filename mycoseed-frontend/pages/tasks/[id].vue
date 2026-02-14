@@ -121,16 +121,25 @@
                   <span class="text-text-title font-medium">{{ task.claimerName }}</span>
                 </div>
                 
-                <!-- 第三行：时间信息 -->
-                <div class="flex justify-between items-center pb-2 border-b border-black/10 gap-4">
-                  <span class="text-text-body">任务领取时间:</span>
-                  <span class="text-text-title font-medium">
-                    {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
-                  </span>
-                  <span class="text-text-body">领取截止时间:</span>
-                  <span class="text-text-title font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
-                  <span class="text-text-body">提交截止时间:</span>
-                  <span class="text-text-title font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
+                <!-- 时间信息：手机端三行，电脑端一行 -->
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center pb-2 border-b border-black/10 gap-2 md:gap-4">
+                  <!-- 任务开始时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">任务开始时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">
+                      {{ task.startDate ? formatDate(task.startDate) : '未设置' }}
+                    </span>
+                  </div>
+                  <!-- 领取截止时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">领取截止时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">{{ task.deadline ? formatDate(task.deadline) : '未设置' }}</span>
+                  </div>
+                  <!-- 提交截止时间 -->
+                  <div class="flex justify-between md:justify-start md:items-center md:gap-2">
+                    <span class="text-xs md:text-base text-text-body">提交截止时间:</span>
+                    <span class="text-xs md:text-base text-text-title font-medium">{{ task.submitDeadline ? formatDate(task.submitDeadline) : (task.deadline ? formatDate(task.deadline) : '未设置') }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -144,9 +153,9 @@
           </div>
         </PixelCard>
 
-        <!-- 多人任务：参与者切换栏（仅创建者可见，放在任务介绍和任务进度之间） -->
+        <!-- 多人任务：参与者切换栏（所有人可见，可查看并切换各参与者的提交内容） -->
         <PixelCard 
-          v-if="canReview && task.participantLimit && task.participantLimit > 1 && task.participantsList && task.participantsList.length > 0"
+          v-if="task.participantLimit && task.participantLimit > 1 && task.participantsList && task.participantsList.length > 0"
           class="mb-4"
         >
           <template #header>
@@ -175,47 +184,73 @@
           </div>
         </PixelCard>
 
-        <!-- 凭证内容（仅创建者可见，多人任务时显示当前查看的参与者的凭证） -->
+        <!-- 提交凭证（所有人可见；有人领取即显示本区块，当前参与者的凭证与审核者所见一致） -->
         <PixelCard 
-          v-if="canReview && task.proof && task.claimerId && (task.status === 'submitted' || task.status === 'under_review' || task.status === 'completed' || task.status === 'rejected')"
+          v-if="task.claimerId && (task.status === 'claimed' || task.status === 'unsubmit' || task.status === 'submitted' || task.status === 'under_review' || task.status === 'completed' || task.status === 'rejected')"
           class="mb-4"
         >
           <template #header>
             提交凭证 - {{ task.claimerName || '参与者' }}
           </template>
           <div class="space-y-4">
-            <!-- 解析并显示凭证内容 -->
-            <div v-if="task.proof" class=" text-base text-text-title">
-              <div v-if="typeof task.proof === 'string' && task.proof.trim().startsWith('{')" class="space-y-3">
-                <!-- JSON 格式的凭证 -->
-                <div v-if="parseProof(task.proof).description" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
-                  <div class="font-bold text-xs uppercase text-text-title mb-2">文字描述</div>
-                  <p class="whitespace-pre-wrap">{{ parseProof(task.proof).description }}</p>
-                </div>
-                <div v-if="parseProof(task.proof).files && parseProof(task.proof).files.length > 0" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
-                  <div class="font-bold text-xs uppercase text-text-title mb-2">提交文件</div>
-                  <div class="space-y-2">
-                    <a 
-                      v-for="(file, index) in parseProof(task.proof).files" 
-                      :key="index"
-                      :href="file.url" 
-                      target="_blank"
-                      class="block p-2 bg-card border border-border hover:bg-primary/10 transition-colors"
-                    >
-                      📎 {{ file.name || '未命名文件' }}
-                    </a>
+            <!-- 已提交：显示提交者提交的全部内容（文字、文件、位置等） -->
+            <template v-if="task.proof">
+              <div class="text-base text-text-title">
+                <template v-if="typeof task.proof === 'string' && task.proof.trim().startsWith('{')">
+                  <!-- JSON 凭证：只显示真实填写内容，不把默认「任务完成」当描述展示 -->
+                  <template v-if="parsedProofContent(task.proof).hasRealContent">
+                    <div v-if="parsedProofContent(task.proof).description" class="p-3 bg-input-bg border border-border rounded-2xl shadow-soft-sm">
+                      <div class="font-bold text-xs uppercase text-text-title mb-2">文字描述</div>
+                      <p class="whitespace-pre-wrap">{{ parsedProofContent(task.proof).description }}</p>
+                    </div>
+                    <div v-if="parsedProofContent(task.proof).files && parsedProofContent(task.proof).files!.length > 0" class="p-3 bg-input-bg border border-border rounded-2xl shadow-soft-sm">
+                      <div class="font-bold text-xs uppercase text-text-title mb-2">提交文件</div>
+                      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <template v-for="(file, index) in parsedProofContent(task.proof).files" :key="index">
+                          <!-- 图片：缩略图 + 点击预览 -->
+                          <div
+                            v-if="isImageFile(file)"
+                            class="rounded-xl border border-border overflow-hidden bg-card cursor-pointer hover:shadow-soft transition-all"
+                            @click="openProofPreview(file)"
+                          >
+                            <div class="aspect-square bg-input-bg flex items-center justify-center overflow-hidden">
+                              <img :src="file.url" :alt="file.name" class="w-full h-full object-cover" />
+                            </div>
+                            <div class="p-2 text-xs text-text-body truncate">{{ file.name || '图片' }}</div>
+                          </div>
+                          <!-- 非图片：链接 + 预览按钮 -->
+                          <a
+                            v-else
+                            :href="file.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="flex items-center gap-2 p-3 bg-card border border-border rounded-xl hover:bg-primary/10 transition-colors"
+                          >
+                            <span class="text-lg">📎</span>
+                            <span class="text-sm text-text-title truncate flex-1">{{ file.name || '未命名文件' }}</span>
+                          </a>
+                        </template>
+                      </div>
+                    </div>
+                    <div v-if="parsedProofContent(task.proof).gps" class="p-3 bg-input-bg border border-border rounded-2xl shadow-soft-sm">
+                      <div class="font-bold text-xs uppercase text-text-title mb-2">位置信息</div>
+                      <p>纬度: {{ parsedProofContent(task.proof).gps!.latitude || (parsedProofContent(task.proof).gps as any).lat }}</p>
+                      <p>经度: {{ parsedProofContent(task.proof).gps!.longitude || (parsedProofContent(task.proof).gps as any).lng }}</p>
+                    </div>
+                  </template>
+                  <div v-else class="p-3 bg-input-bg border border-border rounded-2xl text-text-placeholder text-sm">
+                    暂无详细描述或附件
                   </div>
-                </div>
-                <div v-if="parseProof(task.proof).gps" class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
-                  <div class="font-bold text-xs uppercase text-text-title mb-2">位置信息</div>
-                  <p>纬度: {{ parseProof(task.proof).gps.latitude || parseProof(task.proof).gps.lat }}</p>
-                  <p>经度: {{ parseProof(task.proof).gps.longitude || parseProof(task.proof).gps.lng }}</p>
+                </template>
+                <div v-else class="p-3 bg-input-bg border border-border rounded-2xl shadow-soft-sm">
+                  <!-- 纯文本凭证：直接显示提交者写的文字 -->
+                  <p class="whitespace-pre-wrap">{{ task.proof }}</p>
                 </div>
               </div>
-              <div v-else class="p-3 bg-gray-50 border border-border rounded-2xl shadow-soft-sm">
-                <!-- 纯文本格式的凭证 -->
-                <p class="whitespace-pre-wrap">{{ task.proof }}</p>
-              </div>
+            </template>
+            <!-- 已领取但尚未提交 -->
+            <div v-else class="p-4 text-center text-text-placeholder text-sm">
+              暂无提交内容，等待提交
             </div>
           </div>
         </PixelCard>
@@ -506,6 +541,32 @@
       </div>
     </div>
 
+    <!-- 凭证图片/文件预览弹层 -->
+    <Teleport to="body">
+      <div
+        v-if="proofPreviewUrl"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+        @click.self="proofPreviewUrl = null"
+      >
+        <div class="relative max-w-[90vw] max-h-[90vh] bg-card rounded-2xl shadow-soft overflow-hidden">
+          <img
+            v-if="proofPreviewUrl"
+            :src="proofPreviewUrl"
+            alt="预览"
+            class="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+            @click.stop
+          />
+          <button
+            type="button"
+            class="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+            aria-label="关闭"
+            @click="proofPreviewUrl = null"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -529,6 +590,7 @@ const userStore = useUserStore()
 const taskRewardSymbol = ref('积分') // 任务奖励的积分符号
 const isTransferring = ref(false)
 const isMarkingTransfer = ref(false)
+const proofPreviewUrl = ref<string | null>(null)
 
 // 当前查看的参与者ID（用于多人任务导航）
 
@@ -955,6 +1017,29 @@ const parseProof = (proof: string) => {
   }
 }
 
+// 判断是否为图片文件（按 URL 或 name 后缀）
+const isImageFile = (file: { name?: string; url?: string }) => {
+  const ext = (file.name || file.url || '').split('.').pop()?.toLowerCase() || ''
+  return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)
+}
+const openProofPreview = (file: { url?: string }) => {
+  if (file?.url) proofPreviewUrl.value = file.url
+}
+
+// 解析并判断是否为「真实提交内容」（过滤掉仅默认「任务完成」、无文件无位置的情况）
+const parsedProofContent = (proof: string) => {
+  const base = parseProof(proof)
+  const hasFiles = !!(base.files && base.files.length > 0)
+  const hasGps = !!base.gps
+  const desc = (base.description || '').trim()
+  const isDefaultOnly = desc === '任务完成' && !hasFiles && !hasGps
+  return {
+    ...base,
+    hasRealContent: !isDefaultOnly && (!!desc || hasFiles || hasGps),
+    description: isDefaultOnly ? '' : desc
+  }
+}
+
 // 生成进度时间线
 // 优先使用任务的时间线字段（timeline），如果不存在则根据任务状态生成
 const updateTimeline = () => {
@@ -1015,7 +1100,10 @@ const updateTimeline = () => {
             ? `任务已被${actorName || '参与者'}领取，等待提交`
             : action === '重新提交'
             ? `任务已重新提交，等待提交凭证${actorName ? `（操作者：${actorName}）` : ''}${reason ? `，原因：${reason}` : ''}`
+            : action === '审核驳回'
+            ? `审核未通过，需要重新提交任务${actorName ? `（审核者：${actorName}）` : ''}${reason ? `，驳回原因：${reason}` : ''}`
             : '任务待提交'
+          if (action === '审核驳回') title = '审核驳回'
           break
         case 'submitted':
           title = action || '凭证提交'
@@ -1122,30 +1210,33 @@ const updateTimeline = () => {
         status: 'rejected'
       })
     } else if (rejectOption === 'resubmit') {
+      const rejectReason = (task.value as any).rejectReason || ''
       updates.push({
         id: '4',
-        title: '审核未通过',
-        description: '审核未通过，重新提交',
+        title: '审核驳回',
+        description: `审核未通过，需要重新提交任务${rejectReason ? `，驳回原因：${rejectReason}` : ''}`,
         timestamp: task.value.updatedAt || new Date().toISOString(),
         status: 'unsubmit'
       })
     } else if (rejectOption === 'reclaim') {
+      const rejectReason = (task.value as any).rejectReason || ''
       updates.push({
         id: '4',
-        title: '审核未通过',
-        description: '审核未通过，重新领取任务',
+        title: '审核驳回',
+        description: `审核未通过，需要重新领取任务${rejectReason ? `，驳回原因：${rejectReason}` : ''}`,
         timestamp: task.value.updatedAt || new Date().toISOString(),
         status: 'unclaimed'
       })
     } else {
       // 默认情况
-    updates.push({
+      const rejectReason = (task.value as any).rejectReason || ''
+      updates.push({
         id: '4',
-      title: '审核驳回',
-      description: '任务审核未通过，已驳回',
-      timestamp: task.value.updatedAt || new Date().toISOString(),
-      status: 'rejected'
-    })
+        title: '审核驳回',
+        description: `任务审核未通过，已驳回${rejectReason ? `，驳回原因：${rejectReason}` : ''}`,
+        timestamp: task.value.updatedAt || new Date().toISOString(),
+        status: 'rejected'
+      })
     }
   }
   

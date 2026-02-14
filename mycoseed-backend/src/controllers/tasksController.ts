@@ -316,7 +316,7 @@ const mapDbTaskToTask = (
   taskInfo?: any,
   taskTimeline?: any,
   taskProof?: any
-): Task & { creatorName?: string; claimerId?: string; claimerName?: string } => {
+): Task & { creatorName?: string; creatorAvatar?: string; claimerId?: string; claimerName?: string } => {
   // 从 task_info 或 dbTask 中获取基本信息
   const info = taskInfo || dbTask.task_info || {}
   
@@ -398,6 +398,7 @@ const mapDbTaskToTask = (
     assignedUserId: info.assigned_user_id || null,  // 指定参与人员ID（向后兼容）
     // 用户信息
     creatorName: dbTask.creator?.name || null,
+    creatorAvatar: dbTask.creator?.avatar || null,
   claimerName: dbTask.claimer?.name || null
   }
 }
@@ -676,24 +677,26 @@ export const getAllTasks = async (req: Request, res: Response) => {
         }
       }
   
-      // 获取所有创建者ID和领取者ID
-      const creatorIds = [...new Set(tasksData.filter(t => t.creator_id).map(t => t.creator_id))]
+      // 获取所有创建者ID和领取者ID（含 task_info 的 creator_id，确保任务卡片能拿到发布者头像）
+      const creatorIdsFromTasks = [...new Set(tasksData.filter(t => t.creator_id).map(t => t.creator_id))]
+      const creatorIdsFromInfo = [...new Set(Object.values(taskInfoMap).filter((info: any) => info.creator_id).map((info: any) => info.creator_id))]
+      const creatorIds = [...new Set([...creatorIdsFromTasks, ...creatorIdsFromInfo])]
       const claimerIds = [...new Set(tasksData.filter(t => t.claimer_id).map(t => t.claimer_id))]
       const allUserIds = [...new Set([...creatorIds, ...claimerIds])]
       
-      // 批量获取用户信息
-      let usersMap: Record<string, { id: string; name: string }> = {}
+      // 批量获取用户信息（含头像，用于任务卡片展示）
+      let usersMap: Record<string, { id: string; name: string; avatar?: string }> = {}
       if (allUserIds.length > 0) {
         const { data: usersData } = await supabase
           .from('users')
-          .select('id, name')
+          .select('id, name, avatar')
           .in('id', allUserIds)
         
         if (usersData) {
           usersMap = usersData.reduce((acc, user) => {
             acc[user.id] = user
             return acc
-          }, {} as Record<string, { id: string; name: string }>)
+          }, {} as Record<string, { id: string; name: string; avatar?: string }>)
         }
       }
       
@@ -708,10 +711,11 @@ export const getAllTasks = async (req: Request, res: Response) => {
         })
         .map(task => {
           const taskInfo = taskInfoMap[task.task_info_id]
+          const creatorUser = (task.creator_id ? usersMap[task.creator_id] : null) || (taskInfo?.creator_id ? usersMap[taskInfo.creator_id] : null)
           return {
         ...task,
             task_info: taskInfo,
-            creator: task.creator_id ? usersMap[task.creator_id] : null,
+            creator: creatorUser,
             claimer: task.claimer_id ? usersMap[task.claimer_id] : null,
             task_timeline: timelinesMap[task.id] || { timeline: [] },
             task_proof: proofsMap[task.id] || null
@@ -1300,9 +1304,18 @@ export const claimTask = async (req: AuthRequest, res: Response) =>
             }
         }
 
-        // 检查是否指定了参与人员（允许创建者领取自己的任务）
+        // 检查是否指定了参与人员（创建者也不能领取指定给其他人的任务）
         if (taskInfo?.assigned_user_id) {
-            if (taskInfo.assigned_user_id !== user.id && taskInfo.creator_id !== user.id) {
+            if (taskInfo.assigned_user_id !== user.id) {
+                return res.status(403).json({ success: false, message: '此任务已指定给其他用户，您无法领取' })
+            }
+        }
+        
+        // 检查是否指定了多个参与人员（多人任务，从proof_config中读取）
+        const assignedUserIds = (taskInfo?.proof_config as any)?._assignedUserIds || (taskInfo?.assigned_user_id ? [taskInfo.assigned_user_id] : [])
+        if (assignedUserIds.length > 0) {
+            // 如果是多人任务，检查用户是否在指定列表中
+            if (!assignedUserIds.includes(user.id)) {
                 return res.status(403).json({ success: false, message: '此任务已指定给其他用户，您无法领取' })
             }
         }
@@ -1874,48 +1887,20 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
             })
         }
 
-        // 获取该任务组的所有已提交的任务行（通过检查 task_proofs 表）
-        let tasksToReject: any[] = []
-        if (task.task_info_id) {
-            // 获取所有已提交的任务
-            const { data: allTasks } = await supabase
-                .from('tasks')
-                .select('id, status')
-                .eq('task_info_id', task.task_info_id)
-                .eq('status', 'submitted')
-            
-            // 检查这些任务是否都有 proof
-            if (allTasks && allTasks.length > 0) {
-                const taskIds = allTasks.map(t => t.id)
-                const { data: proofsData } = await supabase
-                    .from('task_proofs')
-                    .select('task_id')
-                    .in('task_id', taskIds)
-                    .not('proof', 'is', null)
-                
-                const tasksWithProof = allTasks.filter(t => 
-                    proofsData?.some(p => p.task_id === t.id)
-                )
-                tasksToReject = tasksWithProof
-            }
-        } else {
-            // 单个任务：检查是否有 proof
-            const { data: proofData } = await supabase
-                .from('task_proofs')
-                .select('task_id')
-                .eq('task_id', id)
-                .not('proof', 'is', null)
-                .single()
-            
-            if (proofData) {
-                tasksToReject = [task]
-            }
-        }
+        // 仅驳回传入的单个任务行 id（多人任务中只驳回当前选中的参与者，不牵连同任务其他参与者）
+        // resubmit / reclaim / rejected 均只作用于本条 task 行，不使用 task_info_id 批量操作
+        // 检查该任务行是否有 proof
+        const { data: proofData } = await supabase
+            .from('task_proofs')
+            .select('task_id')
+            .eq('task_id', id)
+            .not('proof', 'is', null)
+            .single()
         
-        if (tasksToReject.length === 0) {
+        if (!proofData) {
             return res.status(400).json({
                 success: false,
-                message: '没有找到已提交的任务，无法审核'
+                message: '该任务尚未提交凭证，无法审核'
             })
         }
 
@@ -1938,145 +1923,115 @@ export const rejectTask = async (req: AuthRequest, res: Response) =>
         const now = new Date().toISOString()
 
         if (normalizedOption === 'resubmit') {
-            // 重新提交证明：状态改为 unsubmit（已领取但未提交）
-            // 清除 task_proofs 中的 proof，保留 reject_reason 和 reject_option
-            
-            const taskIds = tasksToReject.map(t => t.id)
-            
-            // 更新所有相关任务行状态
-            for (const taskId of taskIds) {
-                // 更新 tasks 表状态
-                await updateTaskStatus(
-                    taskId,
-                    'unsubmit',
-                    user.id,
-                    userName,
-                    '审核驳回',
-                    reason.trim()
-                )
-                
-                // 更新 task_proofs 表：清除 proof，保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        proof: null, // 清除凭证
-                        reject_reason: reason.trim(),
-                        reject_option: 'resubmit',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
+            // 重新提交证明：仅更新本条任务行（req.params.id），不按 task_info_id 批量、不联动其他参与者
+            // 只改 tasks / task_timelines / task_proofs 中 task_id = id 的这一条
+            const taskIdToUpdate = String(id).trim()
+            console.log(`[REJECT] resubmit 仅作用于任务行 id=${taskIdToUpdate}，不联动同 task_info 下其他行`)
+
+            await updateTaskStatus(
+                taskIdToUpdate,
+                'unsubmit',
+                user.id,
+                userName,
+                '审核驳回',
+                reason.trim()
+            )
+
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .update({
+                    proof: null,
+                    reject_reason: reason.trim(),
+                    reject_option: 'resubmit',
+                    updated_at: now
+                })
+                .eq('task_id', taskIdToUpdate)
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (resubmit) ==========\n`)
+
+            console.log(`[REJECT] ========== 审核驳回完成 (resubmit)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
                 success: true,
                 message: '任务已驳回，请重新提交证明'
             })
             return
         } else if (normalizedOption === 'reclaim') {
-            // 重新发布任务：状态改为 unclaimed，清除 claimer_id 和 proof
-            // 获取所有相关任务行（包括未提交的）
-            let allTaskIds: string[] = []
-            if (task.task_info_id) {
-                const { data: allTasks } = await supabase
-                    .from('tasks')
-                    .select('id')
-                    .eq('task_info_id', task.task_info_id)
-                
-                allTaskIds = allTasks?.map(t => t.id) || []
-        } else {
-                allTaskIds = [id]
-        }
+            // 重新发布任务：仅更新本条任务行（req.params.id），不按 task_info_id 批量、不联动其他参与者
+            // 只改 tasks / task_timelines / task_proofs 中 id = id 的这一条，同一多人任务下其他人状态不变
+            const taskIdToUpdate = String(id).trim()
+            console.log(`[REJECT] reclaim 仅作用于任务行 id=${taskIdToUpdate}，不联动同 task_info 下其他行`)
 
-            // 更新所有相关任务行状态
-            for (const taskId of allTaskIds) {
-                // 更新 tasks 表：清除 claimer_id，设置状态为 unclaimed
-                const { error: updateError } = await supabase
-            .from('tasks')
-                    .update({
-                        claimer_id: null,
-                        status: 'unclaimed',
-                        updated_at: now
-                    })
-                    .eq('id', taskId)
+            // 更新 tasks 表：仅本条任务行
+            const { error: updateError } = await supabase
+                .from('tasks')
+                .update({
+                    claimer_id: null,
+                    status: 'unclaimed',
+                    updated_at: now
+                })
+                .eq('id', taskIdToUpdate)
 
-                if (updateError) {
-                    console.error(`[REJECT] ❌ 更新任务状态失败:`, updateError)
-                    throw updateError
-                }
-                
-                // 更新 task_proofs 表：清除 proof，保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        proof: null, // 清除凭证
-                        reject_reason: reason.trim(),
-                        reject_option: 'reclaim',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
-                
-                // 追加状态到时间线
-                await appendStatusToTimeline(taskId, 'reclaim', user.id, userName, '审核驳回', reason.trim())
-                await appendStatusToTimeline(taskId, 'unclaimed', user.id, userName, '重新发布')
+            if (updateError) {
+                console.error(`[REJECT] ❌ 更新任务状态失败:`, updateError)
+                throw updateError
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (reclaim) ==========\n`)
+
+            // 更新 task_proofs 表：仅本条（用 update+eq，确保只改一行）
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .update({
+                    proof: null,
+                    reject_reason: reason.trim(),
+                    reject_option: 'reclaim',
+                    updated_at: now
+                })
+                .eq('task_id', taskIdToUpdate)
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
+            }
+
+            // 只给本条任务行追加时间线
+            await appendStatusToTimeline(taskIdToUpdate, 'reclaim', user.id, userName, '审核驳回', reason.trim())
+            await appendStatusToTimeline(taskIdToUpdate, 'unclaimed', user.id, userName, '重新发布')
+
+            console.log(`[REJECT] ========== 审核驳回完成 (reclaim)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
             success: true,
                 message: '任务已驳回，已重新发布'
             })
             return
         } else if (normalizedOption === 'rejected') {
-            // 终止任务：状态改为 rejected，任务关闭并放入已失效
-            
-            const taskIds = tasksToReject.map(t => t.id)
-            
-            // 更新所有相关任务行状态
-            for (const taskId of taskIds) {
-                // 更新 tasks 表状态
-                await updateTaskStatus(
-                    taskId,
-                    'rejected',
-                    user.id,
-                    userName,
-                    '审核驳回',
-                    reason.trim()
-                )
-                
-                // 更新 task_proofs 表：保存驳回信息
-                const { error: proofError } = await supabase
-                    .from('task_proofs')
-                    .upsert({
-                        task_id: taskId,
-                        reject_reason: reason.trim(),
-                        reject_option: 'rejected',
-                        updated_at: now
-                    }, {
-                        onConflict: 'task_id'
-                    })
-                
-                if (proofError) {
-                    console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
-                    // 不抛出错误，继续执行
-                }
+            // 终止任务：仅将当前选中的这一条任务行改为 rejected（多人任务中只终止当前参与者，不关闭整个任务）
+            const taskIdToUpdate = id
+
+            await updateTaskStatus(
+                taskIdToUpdate,
+                'rejected',
+                user.id,
+                userName,
+                '审核驳回',
+                reason.trim()
+            )
+
+            const { error: proofError } = await supabase
+                .from('task_proofs')
+                .upsert({
+                    task_id: taskIdToUpdate,
+                    reject_reason: reason.trim(),
+                    reject_option: 'rejected',
+                    updated_at: now
+                }, {
+                    onConflict: 'task_id'
+                })
+
+            if (proofError) {
+                console.error(`[REJECT] ❌ 更新 task_proofs 失败:`, proofError)
             }
-            
-            console.log(`[REJECT] ========== 审核驳回完成 (rejected) ==========\n`)
+
+            console.log(`[REJECT] ========== 审核驳回完成 (rejected)，仅任务行 ${taskIdToUpdate} ==========\n`)
             res.json({
                 success: true,
                 message: '任务已驳回，已终止'
