@@ -18,6 +18,7 @@ const bufferToStream = (buffer: Buffer): Readable => {
 /**
  * 上传文件到 Supabase Storage
  * @param file 文件 Buffer
+ * @param postId 动态ID（可以是前端预生成的UUID，或后端创建后返回的ID）
  * @param bucket 存储桶名称
  * @param path 文件路径
  * @param contentType 文件的 MIME 类型
@@ -126,4 +127,52 @@ export const uploadTaskProof = async (
     const fileName = `${taskId}/${userId}/${timestamp}_${index}.${ext}`
 
     return await uploadFileToStorage(file, 'task-proofs', fileName, contentType)
+}
+
+
+/**
+ * 上传社区动态图片
+ * @param file 图片文件 Buffer
+ * @param postId 动态ID（可以是前端预生成的UUID，或后端创建后返回的ID）
+ * @param communityId 社区ID
+ * @param index 图片索引（用于多图上传，0-8）
+ * @param contentType 文件的 MIME 类型
+ * @returns 图片的公共 URL 和哈希值
+ */
+export const uploadPostImage = async (
+    file: Buffer,
+    postId: string,
+    communityId: string,
+    index: number = 0,
+    contentType: string
+): Promise<{ url: string; hash: string }> => {
+    // 根据 MIME 类型推断文件扩展名（仅支持图片）
+    const getExtension = (mimeType: string): string => {
+        const mimeToExt: Record<string, string> = {
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp'
+        }
+        const ext = mimeToExt[mimeType.toLowerCase()]
+        if (!ext) {
+            throw new Error(`不支持的图片类型：${mimeType}，仅支持 JPEG、PNG、GIF、WebP`)
+        }
+        return ext
+    }
+
+    // 验证索引范围（最多9张图片，索引0-8）
+    if (index < 0 || index > 8) {
+        throw new Error(`图片索引必须在0-8之间，当前索引：${index}`)
+    }
+
+    // 生成唯一文件名
+    // 路径格式：{communityId}/{postId}/{timestamp}_{index}.{ext}
+    // postId 可以是前端预生成的UUID，这样路径完美关联
+    const timestamp = Date.now()
+    const ext = getExtension(contentType)
+    const fileName = `${communityId}/${postId}/${timestamp}_${index}.${ext}`
+
+    return await uploadFileToStorage(file, 'community-posts', fileName, contentType)
 }

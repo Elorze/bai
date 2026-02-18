@@ -1,3 +1,8 @@
+// ==================== 常量定义 ====================
+
+// 默认社区 UUID（用于测试，后续改为从用户信息或社区管理获取）
+export const DEFAULT_COMMUNITY_UUID = '00000000-0000-0000-0000-000000000001'
+
 // ==================== 数据类型定义 ====================
 
 export interface ProofFile
@@ -91,7 +96,6 @@ export interface Task {
   discountReason?: string        // 打折理由
   creatorId?: string             // 创建者ID (UUID)
   creatorName?: string           // 创建者名称
-  creatorAvatar?: string         // 创建者头像 URL
   claimerId?: string             // 接单者ID (UUID)（单人任务）
   claimerName?: string           // 接单者名称（单人任务）
   assignedUserId?: string        // 指定参与人员ID（可选，如果指定，则只有该用户可以领取）
@@ -1354,7 +1358,7 @@ export const updateCommunityProfile = async (communityId: number, profile: Commu
  * 社群数据结构
  */
 export interface Community {
-  id: number
+  id: string                     // 社群ID (UUID)
   name: string                    // 社群名称
   description: string            // 社群描述
   memberCount: number            // 成员数量
@@ -1410,10 +1414,360 @@ export interface NetworkLink {
   weight: number                 // 连接权重（基于参与度和活跃度）
 }
 
+// ==================== 社区圈相关类型定义 ====================
+
+/**
+ * 社区动态（Post）数据结构
+ */
+export interface Post {
+  id: string                                    // 动态ID (UUID)
+  communityId?: string | number | null         // 所属社区ID（预留字段，暂时允许NULL）
+  authorId: string                             // 发布者ID (UUID)
+  content: string                              // 动态内容（纯文本）
+  images: string[]                             // 图片URL数组，最多9张
+  taskId?: string | null                       // 关联的任务ID
+  isPinned: boolean                            // 是否置顶
+  createdAt: string                            // 创建时间
+  updatedAt: string
+
+  /** 关联数据（列表/详情接口可能返回） */
+  author?: { id: string; name?: string; avatar?: string }
+  taskInfo?: { id: string; title: string }
+  likesCount?: number
+  commentsCount?: number
+  isLiked?: boolean
+}
+
+/**
+ * 评论（Comment）数据结构
+ */
+export interface Comment {
+  id: string
+  postId: string
+  authorId: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  author?: { id: string; name?: string; avatar?: string }
+}
+
+/**
+ * 点赞（Like）数据结构
+ */
+export interface Like {
+  id: string
+  postId: string
+  userId: string
+  createdAt: string
+  user?: { id: string; name?: string; avatar?: string }
+}
+
+/**
+ * 创建动态参数（前端可传 postId 用于预生成 UUID 流程）
+ */
+export interface CreatePostParams {
+  communityId: string | null
+  content: string
+  images?: string[]
+  taskId?: string | null
+  postId?: string
+}
+
+/**
+ * 创建评论参数
+ */
+export interface CreateCommentParams {
+  postId: string
+  content: string
+}
+
+/**
+ * 获取社区动态列表参数
+ */
+export interface GetCommunityPostsParams {
+  communityId: string
+  page?: number
+  limit?: number
+}
+
+/**
+ * 获取社区动态列表响应
+ */
+export interface GetCommunityPostsResponse {
+  posts: Post[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+}
+
+/**
+ * 获取评论列表响应
+ */
+export interface GetCommentsResponse {
+  comments: Comment[]
+  total: number
+}
+
+/**
+ * 点赞接口响应
+ */
+export interface LikeResponse {
+  liked: boolean
+  message: string
+}
+
+/**
+ * 获取点赞列表响应
+ */
+export interface GetLikesResponse {
+  likes: Like[]
+  total: number
+}
+
+// ==================== 社区圈 API（调用后端） ====================
+/**
+ * 获取社区动态列表（分页）
+ */
+export async function getCommunityPosts (
+  params: GetCommunityPostsParams,
+  baseUrl?: string
+): Promise<GetCommunityPostsResponse> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const { communityId, page = 1, limit = 20 } = params
+  const query = new URLSearchParams({ page: String(page), limit: String(limit) })
+  const res = await fetch(
+    `${url}/api/communities/${communityId}/posts?${query}`,
+    { method: 'GET', headers: getAuthHeaders() }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 发布动态（可选传 postId，用于先上传图片再发帖的流程）
+ */
+export async function createPost (
+  params: CreatePostParams,
+  baseUrl?: string
+): Promise<Post> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const communityId = params.communityId || DEFAULT_COMMUNITY_UUID
+  const body: Record<string, unknown> = {
+    communityId,
+    content: params.content,
+    images: params.images ?? [],
+    taskId: params.taskId ?? null
+  }
+  if (params.postId) body.postId = params.postId
+  const res = await fetch(`${url}/api/communities/${communityId}/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body)
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 获取动态详情
+ */
+export async function getPostById (postId: string, baseUrl?: string): Promise<Post> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('动态不存在')
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 删除动态
+ */
+export async function deletePost (postId: string, baseUrl?: string): Promise<void> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+}
+
+/**
+ * 获取动态评论列表
+ */
+export async function getPostComments (
+  postId: string,
+  baseUrl?: string
+): Promise<GetCommentsResponse> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}/comments`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 发表评论
+ */
+export async function createComment (
+  params: CreateCommentParams,
+  baseUrl?: string
+): Promise<Comment> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${params.postId}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ content: params.content })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 删除评论
+ */
+export async function deleteComment (commentId: string, baseUrl?: string): Promise<void> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+}
+
+/**
+ * 点赞/取消点赞
+ */
+export async function togglePostLike (
+  postId: string,
+  baseUrl?: string
+): Promise<LikeResponse> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}/like`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 获取动态点赞列表
+ */
+export async function getPostLikes (
+  postId: string,
+  baseUrl?: string
+): Promise<GetLikesResponse> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}/likes`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 置顶动态
+ */
+export async function pinPost (postId: string, baseUrl?: string): Promise<Post> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}/pin`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 取消置顶
+ */
+export async function unpinPost (postId: string, baseUrl?: string): Promise<Post> {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/posts/${postId}/unpin`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || res.statusText)
+  }
+  return res.json()
+}
+
+/**
+ * 上传社区动态图片（多图，最多 9 张）
+ * 用于「先传图再发帖」流程：先调此接口拿到 urls，再在 createPost 的 images 里传这些 url，并传 postId 与后端一致。
+ */
+export async function uploadPostImage (params: {
+  postId: string
+  communityId: string | null
+  files: File[]
+  baseUrl?: string
+}): Promise<{ success: boolean; files: { url: string; hash?: string; name?: string; size?: number; type?: string }[] }> {
+  console.log('uploadPostImage params.baseUrl:', params.baseUrl)
+  const url = params.baseUrl ?? getApiBaseUrl()
+  const communityId = params.communityId || DEFAULT_COMMUNITY_UUID
+  const form = new FormData()
+  form.append('postId', params.postId)
+  form.append('communityId', communityId)
+  params.files.forEach((file) => form.append('files', file))
+
+  const headers = getAuthHeaders()
+  delete (headers as any)['Content-Type']
+
+  const res = await fetch(`${url}/api/upload/post-image`, {
+    method: 'POST',
+    headers,
+    body: form
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { message?: string }).message || '上传图片失败')
+  }
+  return res.json()
+}
+
 // Mock 社群数据（两个社区）
 const mockCommunities: Community[] = [
   {
-    id: 1,
+    id: DEFAULT_COMMUNITY_UUID,
     name: '有种行动队',
     description: '社区种菜志愿者组织，一起种植、收获、分享绿色生活。',
     memberCount: 68,
@@ -1441,7 +1795,7 @@ const mockCommunities: Community[] = [
     `
   },
   {
-    id: 2,
+    id: '00000000-0000-0000-0000-000000000002',
     name: '南塘',
     description: '素舍提供乡村村民宿餐饮，体验乡村生活，感受自然之美。',
     memberCount: 45,
@@ -1493,7 +1847,7 @@ export const getCommunities = async (): Promise<Community[]> => {
 /**
  * 根据 ID 获取单个社群详情
  */
-export const getCommunityById = async (id: number): Promise<Community | null> => {
+export const getCommunityById = async (id: string): Promise<Community | null> => {
   await new Promise(resolve => setTimeout(resolve, 200))
   const community = mockCommunities.find(c => c.id === id)
   return community || null
@@ -1502,9 +1856,14 @@ export const getCommunityById = async (id: number): Promise<Community | null> =>
 /**
  * 获取社群成员列表
  */
-export const getCommunityMembers = async (communityId: number): Promise<Member[]> => {
+export const getCommunityMembers = async (communityId: string): Promise<Member[]> => {
   await new Promise(resolve => setTimeout(resolve, 200))
-  return mockMembers.filter(m => m.communities.includes(communityId))
+  // Convert string UUID to number for mock data compatibility
+  // TODO: Update mockMembers to use UUID strings
+  const communityIdNum = communityId === DEFAULT_COMMUNITY_UUID ? 1 : 
+                         communityId === '00000000-0000-0000-0000-000000000002' ? 2 : null
+  if (communityIdNum === null) return []
+  return mockMembers.filter(m => m.communities.includes(communityIdNum))
 }
 
 /**
@@ -1627,13 +1986,18 @@ export const getNetworkData = async (): Promise<{ nodes: NetworkNode[], links: N
   
   // 添加社群节点
   mockCommunities.forEach(comm => {
+    // 将 UUID 转换为数字 ID 用于 mock 数据兼容性（临时处理）
+    const commIdNum = comm.id === DEFAULT_COMMUNITY_UUID ? 1 : 
+                      comm.id === '00000000-0000-0000-0000-000000000002' ? 2 : null
+    if (commIdNum === null) return
+    
     // 社群的价值基于成员数量和活跃度
-    const memberCount = mockMembers.filter(m => m.communities.includes(comm.id)).length
+    const memberCount = mockMembers.filter(m => m.communities.includes(commIdNum)).length
     const avgParticipation = mockMembers
-      .filter(m => m.communities.includes(comm.id))
+      .filter(m => m.communities.includes(commIdNum))
       .reduce((sum, m) => sum + m.participationScore, 0) / memberCount || 0
     const avgActivity = mockMembers
-      .filter(m => m.communities.includes(comm.id))
+      .filter(m => m.communities.includes(commIdNum))
       .reduce((sum, m) => sum + m.activityScore, 0) / memberCount || 0
     
     // 综合权重 = 成员数 * (参与度 + 活跃度) / 2

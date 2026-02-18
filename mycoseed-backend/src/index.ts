@@ -8,6 +8,9 @@ import tasksRouter from './routes/tasks'
 import authRouter from './routes/auth'
 import uploadRouter from './routes/upload'
 import diagnosticsRouter from './routes/diagnostics'
+import postsRouter from './routes/posts'
+import postRouter from './routes/post'
+import commentsRouter from './routes/comments'
 
 const nodeEnv = process.env.NODE_ENV || 'development'
 
@@ -38,8 +41,17 @@ const corsOptions = {
 
 // 中间件
 app.use(cors(corsOptions))
-app.use(express.json())
-app.use(express.urlencoded({extended:true}))
+app.use('/api/upload', uploadRouter)
+
+// JSON/urlencoded 解析器：跳过 /api/upload，避免 multipart 被当 JSON 解析
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/upload')) return next()
+  return express.json({ limit: '50mb' })(req, res, next)
+})
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/upload')) return next()
+  return express.urlencoded({ extended: true, limit: '50mb' })(req, res, next)
+})
 
 // 健康检查
 app.get('/api/health', (req, res) => {
@@ -55,11 +67,14 @@ app.get('/api/upload/test', (req, res) => {
   res.json({ status: 'ok', message: 'Upload routes are available' })
 })
 
-// 路由
+// 路由（上传已在上面挂载）
 app.use('/api/tasks', tasksRouter)
-app.use('/api/auth',authRouter)
-app.use('/api/upload',uploadRouter)
+app.use('/api/auth', authRouter)
 app.use('/api/diagnostics', diagnosticsRouter)  // 诊断路由（开发用）
+app.use('/api/communities', postsRouter)  // 社区动态相关路由
+app.use('/api/posts', postRouter)         // 单个动态相关路由
+app.use('/api/comments', commentsRouter)  // 评论删除路由
+
 
 // 启动服务器
 app.listen(PORT, () => {

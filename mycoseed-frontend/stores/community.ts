@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCommunities, getCommunityById, type Community } from '~/utils/api'
+import { getCommunities, getCommunityById, type Community, DEFAULT_COMMUNITY_UUID } from '~/utils/api'
 import { getMemberById } from '~/utils/api'
 import { useUserStore } from '~/stores/user'
 
@@ -7,7 +7,7 @@ const STORAGE_KEY = 'mycoseed_current_community_id'
 
 export const useCommunityStore = defineStore('community', {
   state: () => ({
-    currentCommunityId: null as number | null,
+    currentCommunityId: null as string | null,
     currentCommunity: null as Community | null,
   }),
   
@@ -22,20 +22,25 @@ export const useCommunityStore = defineStore('community', {
       
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        const id = parseInt(stored, 10)
-        if (!isNaN(id)) {
-          this.currentCommunityId = id
+        // 如果是数字，转换为默认 UUID（向后兼容）
+        const idNum = parseInt(stored, 10)
+        if (!isNaN(idNum)) {
+          // 将旧的数字 ID 映射到默认 UUID
+          this.currentCommunityId = DEFAULT_COMMUNITY_UUID
+        } else {
+          // 已经是 UUID 字符串
+          this.currentCommunityId = stored
         }
       }
     },
     
     // 设置当前社区
-    async setCurrentCommunity(id: number) {
+    async setCurrentCommunity(id: string) {
       this.currentCommunityId = id
       
       // 持久化到 localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, id.toString())
+        localStorage.setItem(STORAGE_KEY, id)
       }
       
       // 加载社区详情
@@ -48,24 +53,30 @@ export const useCommunityStore = defineStore('community', {
     },
     
     // 获取用户所属的第一个社区作为默认值
-    async getDefaultCommunity(): Promise<number | null> {
+    async getDefaultCommunity(): Promise<string | null> {
       const userStore = useUserStore()
       const user = await userStore.getUser()
       
       if (!user || user.userType !== 'member') {
-        return null
+        return DEFAULT_COMMUNITY_UUID
       }
       
       try {
         const member = await getMemberById(user.id)
         if (member && member.communities.length > 0) {
-          return member.communities[0]
+          // 将数字 ID 映射到 UUID（临时兼容处理）
+          const firstCommunityId = member.communities[0]
+          if (firstCommunityId === 1) {
+            return DEFAULT_COMMUNITY_UUID
+          } else if (firstCommunityId === 2) {
+            return '00000000-0000-0000-0000-000000000002'
+          }
         }
       } catch (error) {
         console.error('Failed to get default community:', error)
       }
       
-      return null
+      return DEFAULT_COMMUNITY_UUID
     },
     
     // 初始化：优先使用上次选择，否则使用用户第一个社区

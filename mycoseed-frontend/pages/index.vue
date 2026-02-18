@@ -113,57 +113,191 @@
               <p class="text-sm text-text-placeholder">点击顶部按钮切换社区频道</p>
             </div>
 
-            <div v-else-if="communityTransactions.length === 0" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
-              <p class="text-lg text-text-body">暂无社区动态</p>
-              <p class="text-sm text-text-placeholder mt-2">社区成员还没有交易记录</p>
-            </div>
-
             <div v-else class="space-y-4">
-              <div 
-                v-for="tx in communityTransactions" 
-                :key="`${tx.userId}-${tx.id}`"
-                class="bg-card rounded-2xl shadow-soft p-4 hover:shadow-soft-lg hover:-translate-y-0.5 transition-all"
-              >
-                <div class="flex items-start gap-4">
-                  <PixelAvatar 
-                    :seed="tx.userAvatarSeed || tx.userName" 
-                    size="md"
-                    class="flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                    @click="navigateTo(`/member/${tx.userId}`)"
-                  />
-                  
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
-                      <span class="font-bold text-sm cursor-pointer hover:text-primary transition-colors text-text-title" @click="navigateTo(`/member/${tx.userId}`)">
-                        {{ tx.userName }}
-                      </span>
-                      <span class="text-xs text-text-placeholder">{{ formatTimeAgoForCommunity(tx.date) }}</span>
+              <div class="flex items-center justify-between border-b-2 border-black pb-2">
+                <h3 class="font-bold text-sm uppercase">社区动态（帖子）</h3>
+                <PixelButton v-if="userStore.user" @click="navigateTo('/post/create')">发动态</PixelButton>
+              </div>
+
+              <div v-if="postsLoading && posts.length === 0" class="text-center py-8 text-gray-500">
+                加载中...
+              </div>
+              <p v-else-if="postsError" class="text-red-600 text-sm py-4">{{ postsError }}</p>
+              <div v-else-if="posts.length === 0" class="text-center py-8 text-gray-500">
+                暂无动态，来发一条吧
+              </div>
+              <div v-else class="grid gap-4">
+                <PixelCard
+                  v-for="post in posts"
+                  :key="post.id"
+                >
+                  <template #header>
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center gap-2">
+                        <PixelAvatar
+                          v-if="post.author?.avatar"
+                          :src="post.author?.avatar"
+                          :seed="post.author?.name || post.authorId"
+                          size="sm"
+                        />
+                        <span class="text-sm font-medium">{{ post.author?.name || '用户' }}</span>
+                      </div>
+                      <span class="text-xs text-gray-500">{{ formatTimeAgo(post.createdAt) }}</span>
                     </div>
-                    
-                    <div class="flex items-center gap-3 mb-2">
-                      <div :class="[
-                        'w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0',
-                        tx.type === 'in' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
-                      ]">
-                        {{ tx.type === 'in' ? '⬇️' : '⬆️' }}
-                      </div>
-                      
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium text-sm text-text-title mb-1">{{ tx.title }}</div>
-                        <div v-if="tx.taskTitle" class="text-xs text-text-placeholder mb-1">
-                          任务: {{ tx.taskTitle }}
-                        </div>
-                        <div :class="[
-                          'text-xl font-bold',
-                          tx.type === 'in' ? 'text-success' : 'text-destructive'
-                        ]">
-                          {{ tx.type === 'in' ? '+' : '-' }}{{ formatAmountForCommunity(tx.amount) }} {{ tx.currency }}
-                        </div>
-                      </div>
+                  </template>
+                  <div class="text-gray-800 whitespace-pre-wrap">
+                    <p
+                      :class="needsTextExpand(post.content) && !isTextExpanded(post.id) ? 'line-clamp-10' : ''"
+                    >
+                      {{ post.content }}
+                    </p>
+                    <button
+                      v-if="needsTextExpand(post.content)"
+                      type="button"
+                      class="text-primary text-sm mt-1 hover:underline"
+                      @click.stop="toggleTextExpand(post.id)"
+                    >
+                      {{ isTextExpanded(post.id) ? '收起' : '展开' }}
+                    </button>
+                  </div>
+                  <div v-if="post.images?.length" :class="['mt-2', getImageGridClass(post.images)]">
+                    <img
+                      v-for="(url, i) in post.images"
+                      :key="i"
+                      :src="url"
+                      :class="getImageSizeClass(post.images)"
+                      alt=""
+                      @click.stop="openImagePreview(url, i, post.images)"
+                    />
+                  </div>
+
+                  <!-- 朋友圈式：点赞名单 + 评论列表（在 footer 上方，自动加载并显示） -->
+                  <div v-if="(postLikesMap.get(post.id)?.length ?? 0) > 0 || (postCommentsMap.get(post.id)?.length ?? 0) > 0" class="mt-3 px-3 py-2 bg-gray-100 rounded-lg text-sm space-y-1.5">
+                    <div v-if="(postLikesMap.get(post.id)?.length ?? 0) > 0" class="text-gray-700">
+                      <span class="text-primary font-medium">赞 </span>
+                      {{ formatLikesNames(postLikesMap.get(post.id) ?? []) }}
+                    </div>
+                    <div v-for="c in (postCommentsMap.get(post.id) ?? [])" :key="c.id" class="text-gray-700">
+                      <span class="font-medium">{{ c.author?.name || '用户' }}</span>: {{ c.content }}
                     </div>
                   </div>
-                </div>
+
+                  <!-- 评论输入（仅当前帖展示） -->
+                  <div v-if="commentInputPostId === post.id" class="mt-2 flex gap-2">
+                    <input
+                      v-model="commentInputText"
+                      type="text"
+                      class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-500"
+                      placeholder="写评论..."
+                      @keydown.enter.prevent="submitComment(post.id)"
+                    />
+                    <button
+                      type="button"
+                      class="px-3 py-2 bg-primary text-white rounded-lg text-sm"
+                      @click="submitComment(post.id)"
+                    >
+                      发送
+                    </button>
+                  </div>
+
+                  <template #footer>
+                    <div class="flex items-center gap-3">
+                      <!-- 赞按钮 -->
+                      <button
+                        type="button"
+                        class="flex items-center gap-1.5 p-1.5 text-gray-500 hover:text-gray-700 rounded transition-colors"
+                        :class="post.isLiked ? 'text-red-500' : ''"
+                        aria-label="赞"
+                        @click.stop="handleLike(post)"
+                      >
+                        <svg class="w-5 h-5" :class="post.isLiked ? 'fill-current' : 'fill-none'" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path v-if="post.isLiked" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                      <!-- 评论按钮 -->
+                      <button
+                        type="button"
+                        class="p-1.5 text-gray-500 hover:text-gray-700 rounded transition-colors"
+                        aria-label="评论"
+                        @click.stop="onPopoverComment(post.id)"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </PixelCard>
               </div>
+
+              <div v-if="postsHasMore && !postsLoading" class="flex justify-center pt-4">
+                <PixelButton size="sm" variant="secondary" @click="loadPosts()">
+                  加载更多
+                </PixelButton>
+              </div>
+
+              <!-- 图片预览层 -->
+              <Teleport to="body">
+                <Transition name="fade">
+                  <div
+                    v-if="previewImage"
+                    class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+                    @click="closeImagePreview"
+                  >
+                    <!-- 关闭按钮 -->
+                    <button
+                      type="button"
+                      class="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+                      @click.stop="closeImagePreview"
+                    >
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+
+                    <!-- 上一张按钮 -->
+                    <button
+                      v-if="previewImage.allImages.length > 1"
+                      type="button"
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-10"
+                      @click.stop="prevImage"
+                    >
+                      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                      </svg>
+                    </button>
+
+                    <!-- 下一张按钮 -->
+                    <button
+                      v-if="previewImage.allImages.length > 1"
+                      type="button"
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-10"
+                      @click.stop="nextImage"
+                    >
+                      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </button>
+
+                    <!-- 图片 -->
+                    <img
+                      :src="previewImage.url"
+                      class="max-w-full max-h-full object-contain"
+                      alt="预览"
+                      @click.stop
+                    />
+
+                    <!-- 图片索引提示 -->
+                    <div
+                      v-if="previewImage.allImages.length > 1"
+                      class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded text-sm"
+                    >
+                      {{ previewImage.index + 1 }} / {{ previewImage.allImages.length }}
+                    </div>
+                  </div>
+                </Transition>
+              </Teleport>
             </div>
           </div>
 
@@ -175,13 +309,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '~/stores/user'
 import { useCommunityStore } from '~/stores/community'
 import PixelCard from '~/components/pixel/PixelCard.vue'
 import PixelAvatar from '~/components/pixel/PixelAvatar.vue'
-import { getCommunityById, getCommunityMembers, getMemberById, getCommunities, getCommunityTransactions, getUserCommunityPoints, type Community, type CommunityTransaction } from '~/utils/api'
+import PixelButton from '~/components/pixel/PixelButton.vue'
+import { getCommunityById, getCommunityMembers, getMemberById, getCommunities, DEFAULT_COMMUNITY_UUID, type Community } from '~/utils/api'
+import type { Post, Comment, Like } from '~/utils/api'
 
 // Use definePageMeta to ensure layout is applied
 definePageMeta({
@@ -190,8 +326,10 @@ definePageMeta({
 })
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const communityStore = useCommunityStore()
+const api = useApi()
 const activeTab = ref('INTRO')
 
 // 简介卡片展开/收起状态
@@ -208,10 +346,227 @@ const members = ref<any[]>([])
 
 // 用户社区相关数据
 const userCommunity = ref<Community | null>(null)
-const communityTransactions = ref<CommunityTransaction[]>([])
 
-// 格式化时间差（用于社区圈）
-const formatTimeAgoForCommunity = (dateString: string): string => {
+// ---------- 帖子列表状态 ----------
+const posts = ref<Post[]>([])
+const postsTotal = ref(0)
+const postsPage = ref(1)
+const postsHasMore = ref(true)
+const postsLoading = ref(false)
+const postsError = ref('')
+const postsLimit = 20
+
+// 朋友圈式：按需加载的点赞/评论
+const postLikesMap = ref<Map<string, Like[]>>(new Map())
+const postCommentsMap = ref<Map<string, Comment[]>>(new Map())
+const commentInputPostId = ref<string | null>(null)
+const commentInputText = ref('')
+// 文字展开状态
+const expandedPosts = ref<Set<string>>(new Set())
+// 图片预览状态
+const previewImage = ref<{ url: string; index: number; allImages: string[] } | null>(null)
+
+// 获取当前社区ID（优先级：当前选择的社区 > 用户所属社区 > 默认UUID）
+const getCurrentCommunityId = (): string | null => {
+  return communityStore.currentCommunityId || userCommunity.value?.id || DEFAULT_COMMUNITY_UUID
+}
+
+// ---------- 加载帖子（分页：reset 为 true 表示从第一页重新拉） ----------
+async function loadPosts(reset = false) {
+  if (postsLoading.value) return
+  const currentCommunityId = getCurrentCommunityId()
+  if (!currentCommunityId) return
+  
+  if (reset) {
+    postsPage.value = 1
+    posts.value = []
+    postsHasMore.value = true
+  }
+  postsLoading.value = true
+  postsError.value = ''
+  try {
+    const res = await api.getCommunityPosts({
+      communityId: currentCommunityId,
+      page: postsPage.value,
+      limit: postsLimit,
+    })
+    if (reset) {
+      posts.value = res.posts
+    } else {
+      posts.value.push(...res.posts)
+    }
+    postsTotal.value = res.total
+    postsHasMore.value = res.hasMore
+    postsPage.value = res.page
+    
+    // 自动加载所有帖子的点赞和评论数据
+    const newPosts = reset ? res.posts : res.posts
+    await Promise.all(newPosts.map(post => ensurePostLikesAndComments(post.id)))
+  } catch (e: any) {
+    postsError.value = e?.message || '加载动态失败'
+  } finally {
+    postsLoading.value = false
+  }
+}
+
+// ---------- 点赞/取消点赞（只更新本地状态，不重新拉列表） ----------
+async function togglePostLike(postId: string) {
+  const idx = posts.value.findIndex((p) => p.id === postId)
+  if (idx === -1) return
+  try {
+    const res = await api.togglePostLike(postId)
+    const p = posts.value[idx]
+    const nowLiked = !!res.liked
+    // 通过替换数组项触发 Vue 响应式，点赞状态和数量会正确更新
+    posts.value[idx] = {
+      ...p,
+      isLiked: nowLiked,
+      likesCount: Math.max(0, (p.likesCount ?? 0) + (nowLiked ? 1 : -1))
+    }
+  } catch (e: any) {
+    console.error('点赞/取消点赞失败:', e?.message)
+  }
+}
+
+// 处理点赞（直接调用，无需弹窗）
+async function handleLike(post: Post) {
+  await togglePostLike(post.id)
+  // 强制刷新该帖的点赞列表，使「赞 xxx」显示正确
+  try {
+    const { likes } = await api.getPostLikes(post.id)
+    postLikesMap.value = new Map(postLikesMap.value).set(post.id, likes)
+  } catch {
+    // 忽略
+  }
+}
+
+async function ensurePostLikesAndComments(postId: string) {
+  if (!postLikesMap.value.has(postId)) {
+    try {
+      const { likes } = await api.getPostLikes(postId)
+      postLikesMap.value = new Map(postLikesMap.value).set(postId, likes)
+    } catch {
+      postLikesMap.value = new Map(postLikesMap.value).set(postId, [])
+    }
+  }
+  if (!postCommentsMap.value.has(postId)) {
+    try {
+      const { comments } = await api.getPostComments(postId)
+      postCommentsMap.value = new Map(postCommentsMap.value).set(postId, comments)
+    } catch {
+      postCommentsMap.value = new Map(postCommentsMap.value).set(postId, [])
+    }
+  }
+}
+
+function formatLikesNames(likes: Like[]): string {
+  const names = likes.map((l) => l.user?.name || '用户').filter(Boolean)
+  return names.join('、')
+}
+
+async function onPopoverComment(postId: string) {
+  // 确保点赞和评论列表已加载
+  await ensurePostLikesAndComments(postId)
+  commentInputPostId.value = postId
+  commentInputText.value = ''
+  nextTick(() => {
+    const input = document.querySelector('input[placeholder="写评论..."]') as HTMLInputElement | null
+    input?.focus()
+  })
+}
+
+async function submitComment(postId: string) {
+  const content = commentInputText.value.trim()
+  if (!content) return
+  try {
+    await api.createComment({ postId, content })
+    commentInputText.value = ''
+    commentInputPostId.value = null
+    const post = posts.value.find((p) => p.id === postId)
+    if (post) post.commentsCount = (post.commentsCount ?? 0) + 1
+    const { comments } = await api.getPostComments(postId)
+    postCommentsMap.value = new Map(postCommentsMap.value).set(postId, comments)
+  } catch (e: any) {
+    console.error('评论失败:', e?.message)
+  }
+}
+
+// 判断文字是否需要展开（超过10行，约500字符）
+function needsTextExpand(text: string): boolean {
+  return text.length > 500
+}
+
+// 切换文字展开状态
+function toggleTextExpand(postId: string) {
+  if (expandedPosts.value.has(postId)) {
+    expandedPosts.value.delete(postId)
+  } else {
+    expandedPosts.value.add(postId)
+  }
+}
+
+// 判断文字是否已展开
+function isTextExpanded(postId: string): boolean {
+  return expandedPosts.value.has(postId)
+}
+
+// 获取图片网格布局类
+function getImageGridClass(images: string[]): string {
+  const count = images.length
+  if (count === 1) return 'grid grid-cols-1'
+  if (count <= 4) return 'grid grid-cols-2 gap-1'
+  return 'grid grid-cols-3 gap-1'
+}
+
+// 获取单张图片的样式类
+function getImageSizeClass(images: string[]): string {
+  const count = images.length
+  if (count === 1) return 'w-full max-w-md h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity'
+  return 'w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity'
+}
+
+// 打开图片预览
+function openImagePreview(url: string, index: number, allImages: string[]) {
+  previewImage.value = { url, index, allImages }
+  document.body.style.overflow = 'hidden' // 禁止背景滚动
+}
+
+// 关闭图片预览
+function closeImagePreview() {
+  previewImage.value = null
+  document.body.style.overflow = '' // 恢复滚动
+}
+
+// 切换到上一张图片
+function prevImage() {
+  if (!previewImage.value) return
+  const { index, allImages } = previewImage.value
+  const newIndex = index > 0 ? index - 1 : allImages.length - 1
+  previewImage.value = { url: allImages[newIndex], index: newIndex, allImages }
+}
+
+// 切换到下一张图片
+function nextImage() {
+  if (!previewImage.value) return
+  const { index, allImages } = previewImage.value
+  const newIndex = index < allImages.length - 1 ? index + 1 : 0
+  previewImage.value = { url: allImages[newIndex], index: newIndex, allImages }
+}
+
+// 处理键盘事件（ESC关闭，左右箭头切换）
+function handleKeydown(e: KeyboardEvent) {
+  if (!previewImage.value) return
+  if (e.key === 'Escape') {
+    closeImagePreview()
+  } else if (e.key === 'ArrowLeft') {
+    prevImage()
+  } else if (e.key === 'ArrowRight') {
+    nextImage()
+  }
+}
+
+// 格式化时间差
+const formatTimeAgo = (dateString: string): string => {
   if (!dateString) return ''
   const now = new Date()
   const date = new Date(dateString)
@@ -220,23 +575,13 @@ const formatTimeAgoForCommunity = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
   
-  if (diffMins < 1) {
-    return '刚刚'
-  } else if (diffMins < 60) {
+  if (diffMins < 60) {
     return `${diffMins}分钟前`
   } else if (diffHours < 24) {
     return `${diffHours}小时前`
-  } else if (diffDays < 7) {
-    return `${diffDays}天前`
   } else {
-    // 超过7天显示具体日期
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+    return `${diffDays}天前`
   }
-}
-
-// 格式化金额显示（用于社区圈）
-const formatAmountForCommunity = (amount: number): string => {
-  return amount.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 const navigateTo = (path: string) => {
@@ -244,7 +589,7 @@ const navigateTo = (path: string) => {
 }
 
 // 加载社区数据
-const loadCommunityData = async (communityId: number) => {
+const loadCommunityData = async (communityId: string) => {
   try {
     community.value = await getCommunityById(communityId)
     if (community.value) {
@@ -291,7 +636,12 @@ const loadUserCommunity = async () => {
     console.log('所有社区:', allCommunities.map(c => ({ id: c.id, name: c.name, pointName: c.pointName })))
     
     // 找到用户所属的第一个社区（如果有多个，取第一个）
-    const community = allCommunities.find(c => member.communities.includes(c.id))
+    // 将 UUID 转换为数字 ID 用于 mock 数据兼容性（临时处理）
+    const community = allCommunities.find(c => {
+      const commIdNum = c.id === DEFAULT_COMMUNITY_UUID ? 1 : 
+                        c.id === '00000000-0000-0000-0000-000000000002' ? 2 : null
+      return commIdNum !== null && member.communities.includes(commIdNum)
+    })
     
     if (community) {
       console.log('找到用户社区:', community.name, '积分名称:', community.pointName)
@@ -314,51 +664,14 @@ const loadUserCommunity = async () => {
   }
 }
 
-// 加载社区交易记录
-const loadCommunityTransactions = async () => {
-  // 优先使用 communityStore 的社区ID，如果没有则使用 userCommunity 的ID
-  let communityId = communityStore.currentCommunityId
-  
-  if (!communityId && userCommunity.value) {
-    communityId = userCommunity.value.id
-    console.log('使用 userCommunity 的社区ID:', communityId)
-    // 同时设置到 communityStore
-    await communityStore.setCurrentCommunity(communityId)
-  }
-  
-  if (!communityId) {
-    console.log('没有可用的社区ID，无法加载社区交易记录')
-    communityTransactions.value = []
-    return
-  }
-  
-  console.log('开始加载社区交易记录，社区ID:', communityId)
-  
-  try {
-    const transactions = await getCommunityTransactions(communityId)
-    console.log('成功加载社区交易记录，数量:', transactions.length)
-    console.log('交易记录详情:', transactions.map(tx => ({
-      id: tx.id,
-      userName: tx.userName,
-      title: tx.title,
-      amount: tx.amount,
-      currency: tx.currency,
-      date: tx.date
-    })))
-    communityTransactions.value = transactions
-  } catch (error) {
-    console.error('Failed to load community transactions:', error)
-    communityTransactions.value = []
-  }
-}
 
 // 监听社区变化
 watch(() => communityStore.currentCommunityId, async (newId) => {
   if (newId) {
     await loadCommunityData(newId)
-    // 如果当前在社区圈标签，重新加载社区交易记录
+    // 如果当前在社区圈标签，重新加载帖子列表
     if (activeTab.value === 'COMMUNITY') {
-      await loadCommunityTransactions()
+      await loadPosts(true)
     }
   } else {
     community.value = null
@@ -377,18 +690,45 @@ watch(() => communityStore.currentCommunity, (newCommunity) => {
 watch(() => userCommunity.value?.id, (newId) => {
   console.log('userCommunity ID变化:', newId)
   if (activeTab.value === 'COMMUNITY' && newId) {
-    loadCommunityTransactions()
+    loadPosts(true)
   }
 })
 
 // 监听标签切换
 watch(activeTab, (newTab) => {
   if (newTab === 'COMMUNITY') {
-    loadCommunityTransactions()
+    loadPosts(true)
   }
 })
 
+// 监听路由 query 参数，如果 tab=COMMUNITY 则切换到社区圈并刷新列表
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab === 'COMMUNITY') {
+      activeTab.value = 'COMMUNITY'
+      loadPosts(true)
+      // 移除 query 参数，避免刷新页面时仍被强制切换
+      router.replace({ path: route.path, query: {} })
+    }
+  },
+  { immediate: true }
+)
+
+// 从发帖页返回首页时刷新列表，以便看到新发的帖子
+watch(
+  () => route.fullPath,
+  (newPath, oldPath) => {
+    if (oldPath === '/post/create' && newPath === '/' && activeTab.value === 'COMMUNITY') {
+      loadPosts(true)
+    }
+  }
+)
+
 onMounted(async () => {
+  // 监听键盘事件（用于图片预览）
+  window.addEventListener('keydown', handleKeydown)
+  
   // 确保用户信息已加载
   await userStore.getUser()
   
@@ -403,9 +743,24 @@ onMounted(async () => {
     await loadCommunityData(communityStore.currentCommunityId)
   }
   
-  // 如果当前在社区圈标签，加载社区交易记录
-  if (activeTab.value === 'COMMUNITY') {
-    await loadCommunityTransactions()
+  // 检查 query 参数，如果 tab=COMMUNITY 则切换到社区圈
+  if (route.query.tab === 'COMMUNITY') {
+    activeTab.value = 'COMMUNITY'
+    await loadPosts(true)
+    // 移除 query 参数，避免刷新页面时仍被强制切换
+    router.replace({ path: route.path, query: {} })
+  } else if (activeTab.value === 'COMMUNITY') {
+    // 如果当前在社区圈标签，加载帖子列表
+    await loadPosts(true)
+  }
+})
+
+onUnmounted(() => {
+  // 清理键盘事件监听
+  window.removeEventListener('keydown', handleKeydown)
+  // 清理图片预览 URL
+  if (previewImage.value) {
+    previewImage.value = null
   }
 })
 </script>
@@ -442,5 +797,15 @@ onMounted(async () => {
 .intro-slide-leave-from {
   max-height: 2000px;
   opacity: 1;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

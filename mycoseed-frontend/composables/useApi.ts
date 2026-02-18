@@ -53,6 +53,21 @@ export const useApi = () => {
     getMembers: api.getMembers,
     getMemberById: api.getMemberById,
     getNetworkData: api.getNetworkData,
+
+    // 社区圈动态/评论/点赞 API（调用后端）
+    getCommunityPosts: (params: api.GetCommunityPostsParams) => api.getCommunityPosts(params, apiBaseUrl),
+    createPost: (params: api.CreatePostParams) => api.createPost(params, apiBaseUrl),
+    getPostById: (postId: string) => api.getPostById(postId, apiBaseUrl),
+    deletePost: (postId: string) => api.deletePost(postId, apiBaseUrl),
+    getPostComments: (postId: string) => api.getPostComments(postId, apiBaseUrl),
+    createComment: (params: api.CreateCommentParams) => api.createComment(params, apiBaseUrl),
+    deleteComment: (commentId: string) => api.deleteComment(commentId, apiBaseUrl),
+    togglePostLike: (postId: string) => api.togglePostLike(postId, apiBaseUrl),
+    getPostLikes: (postId: string) => api.getPostLikes(postId, apiBaseUrl),
+    pinPost: (postId: string) => api.pinPost(postId, apiBaseUrl),
+    unpinPost: (postId: string) => api.unpinPost(postId, apiBaseUrl),
+    uploadPostImage: (params: { postId: string; communityId: string | null; files: File[] }) =>
+      api.uploadPostImage({ ...params, baseUrl: apiBaseUrl }),
     
     // 其他工具函数（不需要 API URL）
     AUTH_TOKEN_KEY: api.AUTH_TOKEN_KEY,
