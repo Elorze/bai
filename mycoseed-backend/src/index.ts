@@ -15,8 +15,8 @@ import commentsRouter from './routes/comments'
 const nodeEnv = process.env.NODE_ENV || 'development'
 
 const app = express()
-// 端口：生产环境默认 8080（与 fly.toml internal_port 一致），开发默认 3001
-const PORT = Number(process.env.PORT) || (nodeEnv === 'production' ? 8080 : 3001)
+// 端口：生产环境强制 8080（与 fly.toml internal_port 一致），开发用 env 或 3001
+const PORT = nodeEnv === 'production' ? 8080 : (Number(process.env.PORT) || 3001)
 
 // CORS 配置 - 允许 Vercel 前端域名
 const corsOptions = {
