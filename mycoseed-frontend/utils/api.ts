@@ -1449,6 +1449,9 @@ export interface Comment {
   createdAt: string
   updatedAt: string
   author?: { id: string; name?: string; avatar?: string }
+  /** 回复某人（平面、朋友圈式） */
+  replyToUserId?: string
+  replyTo?: { id: string; name?: string }
 }
 
 /**
@@ -1479,6 +1482,8 @@ export interface CreatePostParams {
 export interface CreateCommentParams {
   postId: string
   content: string
+  /** 被回复用户ID（可选，展示「回复 某人」） */
+  replyToUserId?: string
 }
 
 /**
@@ -1634,10 +1639,12 @@ export async function createComment (
   baseUrl?: string
 ): Promise<Comment> {
   const url = baseUrl ?? getApiBaseUrl()
+  const body: { content: string; replyToUserId?: string } = { content: params.content }
+  if (params.replyToUserId) body.replyToUserId = params.replyToUserId
   const res = await fetch(`${url}/api/posts/${params.postId}/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ content: params.content })
+    body: JSON.stringify(body)
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))

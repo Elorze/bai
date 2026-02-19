@@ -55,6 +55,11 @@ const transformComment = (dbComment: any): Comment => {
             id: dbComment.author.id,
             name: dbComment.author.name,
             avatar: dbComment.author.avatar || dbComment.author.image_url
+        } : undefined,
+        replyToUserId: dbComment.reply_to_user_id ?? undefined,
+        replyTo: dbComment.reply_to_user ? {
+            id: dbComment.reply_to_user.id,
+            name: dbComment.reply_to_user.name
         } : undefined
     }
 }
@@ -405,7 +410,7 @@ export const getPostComments = async (req: AuthRequest, res: Response) => {
     try {
         const postId = req.params.postId
 
-        // 查询评论列表（按时间正序）
+        // 查询评论列表（按时间正序），含被回复人信息
         const { data: comments, error: commentsError } = await supabase
             .from('community_post_comments')
             .select(`
@@ -415,6 +420,10 @@ export const getPostComments = async (req: AuthRequest, res: Response) => {
                     name,
                     avatar,
                     image_url
+                ),
+                reply_to_user:users!community_post_comments_reply_to_user_id_fkey (
+                    id,
+                    name
                 )
             `)
             .eq('post_id', postId)
@@ -454,7 +463,7 @@ export const createComment = async (req: AuthRequest, res: Response) => {
         }
 
         const postId = req.params.postId
-        const { content }: CreateCommentParams = req.body
+        const { content, replyToUserId }: CreateCommentParams = req.body
 
         // 验证必填字段
         if (!content || !content.trim()) {
@@ -477,14 +486,29 @@ export const createComment = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ error: '动态不存在' })
         }
 
+        // 若指定回复某人，校验该用户存在
+        if (replyToUserId) {
+            const { data: replyToUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('id', replyToUserId)
+                .single()
+            if (!replyToUser) {
+                return res.status(400).json({ error: '被回复用户不存在' })
+            }
+        }
+
         // 创建评论
+        const insertPayload: Record<string, unknown> = {
+            post_id: postId,
+            author_id: user.id,
+            content: content.trim()
+        }
+        if (replyToUserId) insertPayload.reply_to_user_id = replyToUserId
+
         const { data: comment, error: createError } = await supabase
             .from('community_post_comments')
-            .insert({
-                post_id: postId,
-                author_id: user.id,
-                content: content.trim()
-            })
+            .insert(insertPayload)
             .select(`
                 *,
                 author:users!community_post_comments_author_id_fkey (
@@ -492,6 +516,10 @@ export const createComment = async (req: AuthRequest, res: Response) => {
                     name,
                     avatar,
                     image_url
+                ),
+                reply_to_user:users!community_post_comments_reply_to_user_id_fkey (
+                    id,
+                    name
                 )
             `)
             .single()

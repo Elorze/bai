@@ -177,27 +177,45 @@
                       <span class="text-primary font-medium">赞 </span>
                       {{ formatLikesNames(postLikesMap.get(post.id) ?? []) }}
                     </div>
-                    <div v-for="c in (postCommentsMap.get(post.id) ?? [])" :key="c.id" class="text-gray-700">
-                      <span class="font-medium">{{ c.author?.name || '用户' }}</span>: {{ c.content }}
+                    <div
+                      v-for="c in (postCommentsMap.get(post.id) ?? [])"
+                      :key="c.id"
+                      class="text-gray-700 flex items-baseline gap-1 flex-wrap cursor-pointer rounded px-1 -mx-1 hover:bg-gray-200/60"
+                      @click.stop="onReplyComment(post.id, c)"
+                    >
+                      <span v-if="c.replyTo" class="text-gray-700">
+                        <span class="font-medium">{{ c.author?.name || '用户' }}</span>
+                        回复
+                        <span class="font-medium">{{ c.replyTo.name || '用户' }}</span>：
+                        {{ c.content }}
+                      </span>
+                      <span v-else class="text-gray-700">
+                        <span class="font-medium">{{ c.author?.name || '用户' }}</span>：{{ c.content }}
+                      </span>
                     </div>
                   </div>
 
                   <!-- 评论输入（仅当前帖展示） -->
-                  <div v-if="commentInputPostId === post.id" class="mt-2 flex gap-2">
-                    <input
-                      v-model="commentInputText"
-                      type="text"
-                      class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-500"
-                      placeholder="写评论..."
-                      @keydown.enter.prevent="submitComment(post.id)"
-                    />
-                    <button
-                      type="button"
-                      class="px-3 py-2 bg-primary text-white rounded-lg text-sm"
-                      @click="submitComment(post.id)"
-                    >
-                      发送
-                    </button>
+                  <div v-if="commentInputPostId === post.id" class="mt-2 flex flex-col gap-1">
+                    <span v-if="replyTarget && replyTarget.postId === post.id" class="text-xs text-gray-500">
+                      回复 {{ replyTarget.userName || '用户' }}
+                    </span>
+                    <div class="flex gap-2">
+                      <input
+                        v-model="commentInputText"
+                        type="text"
+                        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-500"
+                        :placeholder="replyTarget?.postId === post.id ? '写回复...' : '写评论...'"
+                        @keydown.enter.prevent="submitComment(post.id)"
+                      />
+                      <button
+                        type="button"
+                        class="px-3 py-2 bg-primary text-white rounded-lg text-sm"
+                        @click="submitComment(post.id)"
+                      >
+                        发送
+                      </button>
+                    </div>
                   </div>
 
                   <template #footer>
@@ -361,6 +379,8 @@ const postLikesMap = ref<Map<string, Like[]>>(new Map())
 const postCommentsMap = ref<Map<string, Comment[]>>(new Map())
 const commentInputPostId = ref<string | null>(null)
 const commentInputText = ref('')
+/** 当前回复目标（点击某条评论的「回复」时设置） */
+const replyTarget = ref<{ postId: string; userId: string; userName: string } | null>(null)
 // 文字展开状态
 const expandedPosts = ref<Set<string>>(new Set())
 // 图片预览状态
@@ -465,12 +485,26 @@ function formatLikesNames(likes: Like[]): string {
 }
 
 async function onPopoverComment(postId: string) {
-  // 确保点赞和评论列表已加载
   await ensurePostLikesAndComments(postId)
   commentInputPostId.value = postId
   commentInputText.value = ''
+  replyTarget.value = null
   nextTick(() => {
-    const input = document.querySelector('input[placeholder="写评论..."]') as HTMLInputElement | null
+    const input = document.querySelector('input[placeholder="写评论..."], input[placeholder="写回复..."]') as HTMLInputElement | null
+    input?.focus()
+  })
+}
+
+function onReplyComment(postId: string, comment: Comment) {
+  commentInputPostId.value = postId
+  commentInputText.value = ''
+  replyTarget.value = {
+    postId,
+    userId: comment.authorId,
+    userName: comment.author?.name || '用户'
+  }
+  nextTick(() => {
+    const input = document.querySelector('input[placeholder="写评论..."], input[placeholder="写回复..."]') as HTMLInputElement | null
     input?.focus()
   })
 }
@@ -478,10 +512,16 @@ async function onPopoverComment(postId: string) {
 async function submitComment(postId: string) {
   const content = commentInputText.value.trim()
   if (!content) return
+  const currentReply = replyTarget.value?.postId === postId ? replyTarget.value : null
   try {
-    await api.createComment({ postId, content })
+    await api.createComment({
+      postId,
+      content,
+      ...(currentReply ? { replyToUserId: currentReply.userId } : {})
+    })
     commentInputText.value = ''
     commentInputPostId.value = null
+    replyTarget.value = null
     const post = posts.value.find((p) => p.id === postId)
     if (post) post.commentsCount = (post.commentsCount ?? 0) + 1
     const { comments } = await api.getPostComments(postId)

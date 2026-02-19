@@ -44,6 +44,12 @@ export interface Comment {
         name?: string
         avatar?: string
     }
+    /** 回复某人（平面、朋友圈式） */
+    replyToUserId?: string
+    replyTo?: {
+        id: string
+        name?: string
+    }
 }
 
 /**
@@ -79,6 +85,7 @@ export interface CreatePostParams {
 export interface CreateCommentParams {
     postId: string                               // 动态ID
     content: string                              // 评论内容（最多500字）
+    replyToUserId?: string                       // 被回复用户ID（可选，展示「回复 某人」）
 }
 
 /**
