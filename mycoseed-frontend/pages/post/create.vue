@@ -91,7 +91,7 @@ const userCommunity = ref<Community | null>(null)
 
 // 获取当前社区ID（优先级：当前选择的社区 > 用户所属社区 > 默认UUID）
 const communityId = computed(() => {
-  return communityStore.currentCommunityId || userCommunity.value?.id || DEFAULT_COMMUNITY_UUID
+  return communityStore.currentCommunityId
 })
 
 const content = ref('')

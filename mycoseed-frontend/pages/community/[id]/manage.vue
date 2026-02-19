@@ -186,6 +186,8 @@ function canManageMember(m: CommunityMemberItem) {
 }
 
 async function loadUsers() {
+  // 如果已经加载过，直接返回
+  if (allUsers.value.length > 0) return
   try {
     allUsers.value = await getAllUsers(getApiBaseUrl())
   } catch (_) {
@@ -193,11 +195,15 @@ async function loadUsers() {
   }
 }
 
-function searchAddMember() {
+async function searchAddMember() {
   const q = addMemberSearch.value.trim().toLowerCase()
   if (!q) {
     addMemberSearchResults.value = []
     return
+  }
+  // 延迟加载用户列表（只在用户开始搜索时加载）
+  if (allUsers.value.length === 0) {
+    await loadUsers()
   }
   // 过滤掉已经是成员的用户
   const memberIds = new Set(members.value.map(m => m.userId))
@@ -242,19 +248,26 @@ async function doAddMember() {
 
 async function load() {
   try {
-    community.value = await getCommunityById(id)
+    // 并行加载社区信息和成员列表
+    const [communityData, membersList] = await Promise.all([
+      getCommunityById(id),
+      getCommunityMembers(id, getApiBaseUrl())
+    ])
+    
+    community.value = communityData
     if (!community.value) return
     isPublic.value = community.value.isPublic !== false
-    const list = await getCommunityMembers(id, getApiBaseUrl())
-    members.value = list.map(m => ({ ...m, id: m.userId, avatarSeed: m.avatar || m.name || m.userId }))
+    members.value = membersList.map(m => ({ ...m, id: m.userId, avatarSeed: m.avatar || m.name || m.userId }))
+    
+    // 管理员相关数据延迟加载（提升初始加载速度）
     if (isAdmin.value) {
-      try {
-        joinRequests.value = await getCommunityJoinRequests(id, getApiBaseUrl())
-      } catch (_) {
-        joinRequests.value = []
-      }
-      // 加载用户列表用于添加成员
-      if (allUsers.value.length === 0) await loadUsers()
+      // 并行加载入群申请和用户列表（用户列表只在需要时加载）
+      Promise.all([
+        getCommunityJoinRequests(id, getApiBaseUrl()).catch(() => []),
+        // 用户列表延迟加载，只在用户点击添加成员时才加载
+      ]).then(([requests]) => {
+        joinRequests.value = requests
+      })
     }
   } catch (_) {}
 }

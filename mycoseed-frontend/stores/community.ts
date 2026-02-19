@@ -36,15 +36,6 @@ export const useCommunityStore = defineStore('community', {
       }
     },
     
-    /** 默认社区：优先用户已加入的第一个，否则南塘 */
-    async getDefaultCommunity(): Promise<string | null> {
-      try {
-        const list = await getCommunities({ mine: true })
-        if (list.length > 0) return list[0].id
-      } catch (_) {}
-      return NANTANG_ID
-    },
-    
     async initialize() {
       this.loadFromStorage()
       if (this.currentCommunityId) {
@@ -57,8 +48,7 @@ export const useCommunityStore = defineStore('community', {
           if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
         }
       }
-      const defaultId = await this.getDefaultCommunity()
-      if (defaultId) await this.setCurrentCommunity(defaultId)
+      // 不再自动设置默认社区，用户需要手动选择
     },
     
     /** 用于 Header 下拉：当前用户已加入的社区 */

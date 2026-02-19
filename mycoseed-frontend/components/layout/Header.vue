@@ -177,10 +177,15 @@ const handleBlur = (e: FocusEvent) => {
   }, 200)
 }
 
-const selectCommunity = async (id: number) => {
+const selectCommunity = async (id: string) => {
   await communityStore.setCurrentCommunity(id)
   isDropdownOpen.value = false
-  router.push('/')
+  // 如果当前在首页，刷新数据；否则跳转到首页
+  if (router.currentRoute.value.path === '/') {
+    // 触发社区切换监听，自动刷新数据
+  } else {
+    router.push('/')
+  }
 }
 
 const loadCommunities = async () => {

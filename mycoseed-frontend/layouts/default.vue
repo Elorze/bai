@@ -116,10 +116,15 @@ const handleMobileBlur = (e: FocusEvent) => {
   }, 200)
 }
 
-const selectMobileCommunity = async (id: number) => {
+const selectMobileCommunity = async (id: string) => {
   await mobileCommunityStore.setCurrentCommunity(id)
   isMobileDropdownOpen.value = false
-  router.push('/')
+  // 如果当前在首页，刷新数据；否则跳转到首页
+  if (router.currentRoute.value.path === '/') {
+    // 触发社区切换监听，自动刷新数据
+  } else {
+    router.push('/')
+  }
 }
 
 const loadMobileCommunities = async () => {

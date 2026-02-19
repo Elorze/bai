@@ -414,16 +414,19 @@ const expandedPosts = ref<Set<string>>(new Set())
 // 图片预览状态
 const previewImage = ref<{ url: string; index: number; allImages: string[] } | null>(null)
 
-// 获取当前社区ID（优先级：当前选择的社区 > 用户所属社区 > 默认UUID）
+// 获取当前社区ID（只使用用户选择的社区，不设置默认值）
 const getCurrentCommunityId = (): string | null => {
-  return communityStore.currentCommunityId || userCommunity.value?.id || DEFAULT_COMMUNITY_UUID
+  return communityStore.currentCommunityId
 }
 
 // ---------- 加载帖子（分页：reset 为 true 表示从第一页重新拉） ----------
 async function loadPosts(reset = false) {
   if (postsLoading.value) return
   const currentCommunityId = getCurrentCommunityId()
-  if (!currentCommunityId) return
+  if (!currentCommunityId) {
+    posts.value = []
+    return
+  }
   
   if (reset) {
     postsPage.value = 1
@@ -447,9 +450,20 @@ async function loadPosts(reset = false) {
     postsHasMore.value = res.hasMore
     postsPage.value = res.page
     
-    // 自动加载所有帖子的点赞和评论数据
+    // 懒加载点赞和评论数据（只加载可见的帖子，提升初始加载速度）
     const newPosts = reset ? res.posts : res.posts
-    await Promise.all(newPosts.map(post => ensurePostLikesAndComments(post.id)))
+    // 使用 requestIdleCallback 或 setTimeout 延迟加载，优先显示内容
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        Promise.all(newPosts.slice(0, 5).map(post => ensurePostLikesAndComments(post.id)))
+      }, 100)
+      // 剩余帖子在用户滚动时再加载
+      if (newPosts.length > 5) {
+        setTimeout(() => {
+          Promise.all(newPosts.slice(5).map(post => ensurePostLikesAndComments(post.id)))
+        }, 500)
+      }
+    }
   } catch (e: any) {
     postsError.value = e?.message || '加载动态失败'
   } finally {
@@ -656,24 +670,24 @@ const navigateTo = (path: string) => {
   router.push(path)
 }
 
-// 加载社区数据
+// 加载社区数据（并行加载，提升速度）
 const loadCommunityData = async (communityId: string) => {
   try {
-    community.value = await getCommunityById(communityId)
-    if (community.value) {
-      members.value = await getCommunityMembers(communityId)
-      try {
-        announcements.value = await getCommunityAnnouncements(communityId)
-      } catch (_) {
-        announcements.value = []
-      }
-    }
+    // 并行加载社区信息、成员列表和公告
+    const [communityData, membersList, announcementsList] = await Promise.all([
+      getCommunityById(communityId),
+      getCommunityMembers(communityId).catch(() => []),
+      getCommunityAnnouncements(communityId).catch(() => [])
+    ])
+    community.value = communityData
+    members.value = membersList
+    announcements.value = announcementsList
   } catch (error) {
     console.error('Failed to load community data:', error)
   }
 }
 
-// 获取用户所属社区（我加入的社区列表，取第一个作为 userCommunity 并设置 store）
+// 获取用户所属社区（仅用于显示，不自动设置）
 const loadUserCommunity = async () => {
   try {
     const user = await userStore.getUser()
@@ -684,7 +698,10 @@ const loadUserCommunity = async () => {
     const list = await getCommunities({ mine: true })
     if (list.length > 0) {
       userCommunity.value = list[0]
-      if (!communityStore.currentCommunityId) await communityStore.setCurrentCommunity(list[0].id)
+      // 如果用户还没有选择社区，且只有一个社区，自动设置为该社区
+      if (!communityStore.currentCommunityId && list.length === 1) {
+        await communityStore.setCurrentCommunity(list[0].id)
+      }
     }
   } catch (error) {
     console.error('Failed to load user community:', error)
