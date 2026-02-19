@@ -25,8 +25,9 @@ RUN npm run build
 # 生产阶段
 FROM base AS runner
 
-# 设置生产环境
+# 设置生产环境（PORT 默认 8080，与 fly.toml internal_port 一致，避免 Fly 未注入时落到 3001）
 ENV NODE_ENV=production
+ENV PORT=8080
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \
