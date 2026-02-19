@@ -12,7 +12,8 @@ import diagnosticsRouter from './routes/diagnostics'
 const nodeEnv = process.env.NODE_ENV || 'development'
 
 const app = express()
-const PORT = process.env.PORT || 3001
+// 端口：本地可用 .env 或默认 3001；Fly.io 会注入 PORT（如 8080）
+const PORT = Number(process.env.PORT) || 3001
 
 // CORS 配置 - 允许 Vercel 前端域名
 const corsOptions = {
@@ -61,9 +62,9 @@ app.use('/api/auth',authRouter)
 app.use('/api/upload',uploadRouter)
 app.use('/api/diagnostics', diagnosticsRouter)  // 诊断路由（开发用）
 
-// 启动服务器
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`)
+// 启动服务器（监听 0.0.0.0 以支持 Fly.io 等云环境）
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`)
   console.log(`📝 API endpoints available at http://localhost:${PORT}/api`)
   console.log(`🌍 Environment: ${nodeEnv}`)
 })
