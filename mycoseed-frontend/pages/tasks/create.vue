@@ -368,12 +368,14 @@ import PixelButton from '~/components/pixel/PixelButton.vue'
 import { createTask, getApiBaseUrl, getCookie, AUTH_TOKEN_KEY } from '~/utils/api'
 import { useToast } from '~/composables/useToast'
 import { getCurrentBeijingTime } from '~/utils/time'
+import { useCommunityStore } from '~/stores/community'
 
 definePageMeta({
   layout: 'default'
 })
 
 const router = useRouter()
+const communityStore = useCommunityStore()
 const navigateTo = (path: string) => router.push(path)
 
 // 时间输入框引用
@@ -662,14 +664,15 @@ const publishTask = async () => {
       title: taskForm.value.title,
       description: taskForm.value.objective,
       reward: parseFloat(taskForm.value.reward),
-      startDate: startDate, // 如果为空，使用当前时间
+      startDate: startDate,
       deadline: taskForm.value.deadline,
       submitDeadline: taskForm.value.submitDeadline,
       participantLimit: taskForm.value.participantLimit,
       rewardDistributionMode: rewardDistributionMode.value,
       submissionInstructions: taskForm.value.submissionInstructions || '请按照任务要求完成并提交相关凭证。',
       proofConfig: proofConfig.value,
-      assignedUserIds: assignedUserIds  // 指定参与人员ID列表（多人任务）
+      assignedUserIds: assignedUserIds,
+      communityId: communityStore.currentCommunityId || undefined  // 所属社区
     }
     
     console.log('[CREATE TASK] 发送请求参数:', taskParams)

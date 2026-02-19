@@ -64,6 +64,26 @@
       </div>
     </section>
 
+    <!-- 社区管理（仅当前社区管理员可见） -->
+    <section v-if="communityStore.currentCommunityId && isCommunityAdmin" class="px-4 mt-6">
+      <h3 class="text-sm font-bold text-text-body mb-2">社区管理</h3>
+      <div class="bg-card rounded-2xl shadow-soft overflow-hidden border border-border">
+        <NuxtLink
+          :to="`/community/${communityStore.currentCommunityId}/manage`"
+          class="flex items-center gap-3 px-4 py-4 border-b border-border active:bg-input-bg transition-colors"
+        >
+          <span class="w-10 h-10 rounded-xl bg-input-bg flex items-center justify-center text-xl">👥</span>
+          <div class="flex-1 text-left">
+            <div class="font-medium text-text-title">成员管理</div>
+            <div class="text-sm text-text-placeholder">{{ communityStore.currentCommunity?.name }} · 成员、审批、转让</div>
+          </div>
+          <svg class="w-5 h-5 text-text-placeholder" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </NuxtLink>
+      </div>
+    </section>
+
     <!-- 通用 -->
     <section class="px-4 mt-6">
       <h3 class="text-sm font-bold text-text-body mb-2">通用</h3>
@@ -245,6 +265,11 @@ definePageMeta({
 
 const router = useRouter()
 const userStore = useUserStore()
+const communityStore = useCommunityStore()
+const isCommunityAdmin = computed(() => {
+  const r = communityStore.currentCommunity?.myRole
+  return r === 'super_admin' || r === 'sub_admin'
+})
 const toast = useToast()
 const { updateUserProfile, getMe } = useApi()
 const {

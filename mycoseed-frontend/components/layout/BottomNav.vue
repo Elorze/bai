@@ -45,7 +45,7 @@ const getMyProfilePath = () => {
 }
 
 const navItems = computed(() => [
-  { label: '社区广场', path: '/', icon: '🗺️' },
+  { label: '社区广场', path: '/communities', icon: '🗺️' },
   { label: '任务', path: '/tasks', icon: '📋' },
   { label: '活动', path: '/activities-feed', icon: '📅' },
   { label: '我的', path: getMyProfilePath(), icon: '👤' }

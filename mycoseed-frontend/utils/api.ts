@@ -1,7 +1,7 @@
 // ==================== 常量定义 ====================
 
-// 默认社区 UUID（用于测试，后续改为从用户信息或社区管理获取）
-export const DEFAULT_COMMUNITY_UUID = '00000000-0000-0000-0000-000000000001'
+// 默认社区 UUID（南塘，与后端迁移一致）
+export const DEFAULT_COMMUNITY_UUID = '00000000-0000-0000-0000-000000000002'
 
 // ==================== 数据类型定义 ====================
 
@@ -576,9 +576,11 @@ export const getTaskById = async (
  * 获取所有任务列表
  * @param baseUrl API 基础 URL
  */
-export const getAllTasks = async (baseUrl: string): Promise<Task[]> => {
+/** 获取任务列表；传入 communityId 时仅返回该社区任务 */
+export const getAllTasks = async (baseUrl: string, communityId?: string | null): Promise<Task[]> => {
   try {
-    const response = await fetch(`${baseUrl}/api/tasks`, {
+    const params = communityId ? `?communityId=${encodeURIComponent(communityId)}` : ''
+    const response = await fetch(`${baseUrl}/api/tasks${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1362,13 +1364,17 @@ export interface Community {
   name: string                    // 社群名称
   description: string            // 社群描述
   memberCount: number            // 成员数量
-  activityCount: number          // 活动数量
-  totalPoints: number            // 总积分
+  activityCount?: number         // 活动数量（可选）
+  totalPoints?: number           // 总积分（可选）
   markdownIntro?: string         // Markdown 格式的介绍
   category?: string              // 社群类别
-  location?: string              // 社群位置 (例如: 上海, 北京)
+  location?: string              // 社群位置
   pointName?: string             // 社区积分名称
   createdAt: string              // 创建时间
+  slug?: string                  // 邀请码（英文/拼音）
+  isPublic?: boolean             // 是否公开
+  superAdminId?: string | null   // 总管理员 user_id
+  myRole?: 'member' | 'sub_admin' | 'super_admin'  // 当前用户在该社区的角色（仅 getById 返回）
 }
 
 /**
@@ -1844,33 +1850,275 @@ const mockMembers: Member[] = [
 ]
 
 /**
- * 获取所有社群列表
+ * 获取社群列表（公开列表或我加入的）
+ * @param options.mine 为 true 时返回当前用户已加入的社区（需登录）
+ * @param options.q 搜索关键词
  */
-export const getCommunities = async (): Promise<Community[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300))
-  return mockCommunities
+export const getCommunities = async (
+  options?: { mine?: boolean; q?: string },
+  baseUrl?: string
+): Promise<Community[]> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const params = new URLSearchParams()
+  if (options?.mine) params.set('mine', '1')
+  if (options?.q) params.set('q', options.q)
+  const res = await fetch(`${url}/api/communities?${params}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || '获取社区列表失败')
+  }
+  const list = await res.json()
+  return (list || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    memberCount: c.memberCount ?? 0,
+    totalPoints: 0,
+    pointName: c.pointName || '积分',
+    markdownIntro: c.markdownIntro,
+    slug: c.slug,
+    isPublic: c.isPublic,
+    superAdminId: c.superAdminId,
+    createdAt: c.createdAt || '',
+  }))
 }
 
 /**
- * 根据 ID 获取单个社群详情
+ * 根据 ID 获取单个社群详情（可选传 slug 查看私有社区基础信息）
  */
-export const getCommunityById = async (id: string): Promise<Community | null> => {
-  await new Promise(resolve => setTimeout(resolve, 200))
-  const community = mockCommunities.find(c => c.id === id)
-  return community || null
+export const getCommunityById = async (
+  id: string,
+  baseUrl?: string,
+  options?: { slug?: string }
+): Promise<Community | null> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const params = options?.slug ? `?slug=${encodeURIComponent(options.slug)}` : ''
+  const res = await fetch(`${url}/api/communities/${id}${params}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (res.status === 404) return null
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || '获取社区详情失败')
+  }
+  const c = await res.json()
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    memberCount: c.memberCount ?? 0,
+    totalPoints: 0,
+    pointName: c.pointName || '积分',
+    markdownIntro: c.markdownIntro,
+    slug: c.slug,
+    isPublic: c.isPublic,
+    superAdminId: c.superAdminId,
+    myRole: c.myRole,
+    createdAt: c.createdAt || '',
+  }
+}
+
+/** 社区成员项（后端返回） */
+export interface CommunityMemberItem {
+  userId: string
+  name?: string
+  avatar?: string
+  role: 'member' | 'sub_admin' | 'super_admin'
+  joinedAt: string
 }
 
 /**
- * 获取社群成员列表
+ * 获取社群成员列表（需登录且为成员）
+ * 返回格式兼容首页村民展示：id(userId)、name、avatar、avatarSeed、role、joinedAt
  */
-export const getCommunityMembers = async (communityId: string): Promise<Member[]> => {
-  await new Promise(resolve => setTimeout(resolve, 200))
-  // Convert string UUID to number for mock data compatibility
-  // TODO: Update mockMembers to use UUID strings
-  const communityIdNum = communityId === DEFAULT_COMMUNITY_UUID ? 1 : 
-                         communityId === '00000000-0000-0000-0000-000000000002' ? 2 : null
-  if (communityIdNum === null) return []
-  return mockMembers.filter(m => m.communities.includes(communityIdNum))
+export const getCommunityMembers = async (
+  communityId: string,
+  baseUrl?: string
+): Promise<(CommunityMemberItem & { id: string; avatarSeed?: string })[]> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/members`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || '获取成员列表失败')
+  }
+  const list = await res.json() as CommunityMemberItem[]
+  return (list || []).map(m => ({
+    ...m,
+    id: m.userId,
+    avatarSeed: m.avatar || m.name || m.userId,
+  }))
+}
+
+/** 加入社区（公开直接加入，私有传 slug 后提交申请） */
+export const joinCommunity = async (
+  communityId: string,
+  baseUrl: string,
+  body?: { slug?: string }
+): Promise<{ result: string; message?: string }> => {
+  const res = await fetch(`${baseUrl}/api/communities/${communityId}/join`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body || {}),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '加入失败')
+  return data
+}
+
+/** 凭邀请码加入（仅传 slug，后端查社区并加入或提交申请） */
+export const joinCommunityByInviteCode = async (
+  slug: string,
+  baseUrl?: string
+): Promise<{ result: string; message?: string; communityId?: string }> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/join-by-invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ slug: slug.trim().toLowerCase().replace(/\s+/g, '-') }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '加入失败')
+  return data
+}
+
+/** 退出社区 */
+export const leaveCommunity = async (communityId: string, baseUrl: string): Promise<void> => {
+  const res = await fetch(`${baseUrl}/api/communities/${communityId}/leave`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '退出失败')
+}
+
+/** 公告项（按社区） */
+export interface Announcement {
+  id: string
+  communityId: string
+  authorId: string
+  title: string
+  content?: string
+  isPinned: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/** 获取社区公告列表 */
+export const getCommunityAnnouncements = async (
+  communityId: string,
+  baseUrl?: string
+): Promise<Announcement[]> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/announcements`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (!res.ok) throw new Error('获取公告失败')
+  const list = await res.json()
+  return list || []
+}
+
+/** 更新社区（名称、简介、公开性等，需总管理员或系统管理员） */
+export const updateCommunity = async (
+  communityId: string,
+  payload: { name?: string; description?: string; markdownIntro?: string; isPublic?: boolean; pointName?: string },
+  baseUrl?: string
+): Promise<Community> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || '更新失败')
+  }
+  const c = await res.json()
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    memberCount: c.memberCount ?? 0,
+    pointName: c.pointName || '积分',
+    markdownIntro: c.markdownIntro,
+    slug: c.slug,
+    isPublic: c.isPublic,
+    createdAt: c.createdAt || '',
+  }
+}
+
+/** 转让总管理员 */
+export const transferSuperAdmin = async (
+  communityId: string,
+  body: { targetUserId: string; demoteTo: 'member' | 'sub_admin' },
+  baseUrl?: string
+): Promise<void> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/transfer-super-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '转让失败')
+}
+
+/** 更新成员角色或移除成员 */
+export const patchCommunityMember = async (
+  communityId: string,
+  userId: string,
+  body: { action: 'remove' } | { role: 'member' | 'sub_admin' },
+  baseUrl?: string
+): Promise<void> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/members/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '操作失败')
+}
+
+/** 入群申请项 */
+export interface JoinRequestItem {
+  id: string
+  userId: string
+  name?: string
+  avatar?: string
+  status: string
+  createdAt: string
+}
+
+/** 待审批入群申请列表 */
+export const getCommunityJoinRequests = async (communityId: string, baseUrl?: string): Promise<JoinRequestItem[]> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/join-requests`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (!res.ok) throw new Error('获取申请列表失败')
+  return res.json()
+}
+
+/** 通过/拒绝入群申请 */
+export const approveJoinRequest = async (communityId: string, requestId: string, baseUrl?: string): Promise<void> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/join-requests/${requestId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() } })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || '操作失败')
+}
+export const rejectJoinRequest = async (communityId: string, requestId: string, baseUrl?: string): Promise<void> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/join-requests/${requestId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() } })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || '操作失败')
 }
 
 /**

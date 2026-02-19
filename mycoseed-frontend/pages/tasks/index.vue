@@ -134,6 +134,7 @@ import PixelCard from '~/components/pixel/PixelCard.vue'
 import PixelButton from '~/components/pixel/PixelButton.vue'
 import PixelAvatar from '~/components/pixel/PixelAvatar.vue'
 import { useUserStore } from '~/stores/user'
+import { useCommunityStore } from '~/stores/community'
 import { getAllTasks, getApiBaseUrl, type Task } from '~/utils/api'
 import { parseBeijingTime, getCurrentBeijingDate } from '~/utils/time'
 
@@ -144,6 +145,7 @@ definePageMeta({
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const communityStore = useCommunityStore()
 
 // 判断用户是否已登录
 const isAuthenticated = computed(() => {
@@ -170,12 +172,13 @@ const loading = ref(false)
 // 任务列表
 const tasks = ref<Task[]>([])
 
-// 从 API 加载数据
+// 从 API 加载数据（按当前社区过滤）
 const loadData = async () => {
   loading.value = true
   try {
     const baseUrl = getApiBaseUrl()
-    const apiTasks = await getAllTasks(baseUrl)
+    const communityId = communityStore.currentCommunityId || undefined
+    const apiTasks = await getAllTasks(baseUrl, communityId)
     tasks.value = apiTasks
   } catch (error) {
     console.error('加载数据失败:', error)
@@ -536,6 +539,9 @@ onMounted(async () => {
 })
 
 // 监听路由变化，当从创建页面返回时重新加载
+watch(() => communityStore.currentCommunityId, () => {
+  if (route.path === '/tasks') loadData()
+})
 watch(() => route.fullPath, () => {
   if (route.path === '/tasks') {
     loadData()

@@ -8,7 +8,7 @@ import tasksRouter from './routes/tasks'
 import authRouter from './routes/auth'
 import uploadRouter from './routes/upload'
 import diagnosticsRouter from './routes/diagnostics'
-import postsRouter from './routes/posts'
+import communitiesRouter from './routes/communities'
 import postRouter from './routes/post'
 import commentsRouter from './routes/comments'
 
@@ -72,7 +72,7 @@ app.get('/api/upload/test', (req, res) => {
 app.use('/api/tasks', tasksRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/diagnostics', diagnosticsRouter)  // 诊断路由（开发用）
-app.use('/api/communities', postsRouter)  // 社区动态相关路由
+app.use('/api/communities', communitiesRouter)  // 社区 CRUD、成员、公告、动态
 app.use('/api/posts', postRouter)         // 单个动态相关路由
 app.use('/api/comments', commentsRouter)  // 评论删除路由
 

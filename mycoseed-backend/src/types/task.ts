@@ -128,6 +128,7 @@ export interface Task{
 export interface CreateTaskParams{
     // 任务基本信息（存储在 task_info 表）
     title: string
+    communityId?: string  // 所属社区 UUID
     assignedUserId?: string  // 指定参与人员ID（可选，向后兼容）
     assignedUserIds?: string[]  // 指定参与人员ID列表（多人任务）
     description: string

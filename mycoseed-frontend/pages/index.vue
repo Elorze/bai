@@ -1,14 +1,10 @@
 <template>
   <div class="space-y-8">
-    <!-- 开发中提示 -->
-    <div class="text-center py-3 px-4 bg-amber-100 border border-amber-400 rounded-2xl text-amber-800 text-sm">
-      当前页尚在开发中请稍候
-    </div>
-
     <!-- 如果没有选择社区，显示提示 -->
     <div v-if="!communityStore.currentCommunityId" class="text-center py-12 bg-card rounded-3xl shadow-soft p-6">
-      <p class="text-lg text-text-body mb-4">请先选择一个社区</p>
-      <p class="text-sm text-text-placeholder">点击顶部按钮切换社区频道</p>
+      <p class="text-lg text-text-body mb-4">请先选择或加入一个社区</p>
+      <p class="text-sm text-text-placeholder mb-4">点击底部「社区广场」浏览并加入社区，或点击顶部切换已加入的社区</p>
+      <NuxtLink to="/communities" class="text-primary font-medium">前往社区广场</NuxtLink>
     </div>
 
     <!-- 社区面板内容 -->
@@ -34,7 +30,15 @@
 
       <!-- Community Intro Card -->
       <Transition name="intro-slide">
-        <div v-show="isIntroExpanded" class="bg-card rounded-3xl shadow-soft p-6 pb-8 overflow-hidden border border-border">
+        <div v-show="isIntroExpanded" class="bg-card rounded-3xl shadow-soft p-6 pb-8 overflow-hidden border border-border relative">
+          <NuxtLink
+            v-if="isCommunityAdmin && community?.id"
+            :to="`/community/${community.id}/edit`"
+            class="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center text-text-body hover:bg-input-bg"
+            title="编辑简介"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </NuxtLink>
           <div class="prose text-lg max-w-none text-text-body">
             <h3 class="text-base font-bold text-text-title border-b border-border pb-2 mb-4">欢迎来到 {{ community?.name }}</h3>
             <div class="whitespace-pre-wrap">{{ community?.markdownIntro || '正在加载...' }}</div>
@@ -66,9 +70,28 @@
           <!-- INTRO TAB -->
           <div v-if="activeTab === 'INTRO'" class="space-y-6">
             <!-- Town Hall (Governance & Members) -->
+            <!-- 公告 -->
+            <PixelCard v-if="announcements.length > 0" class="mb-6">
+              <template #header>
+                <span>公告</span>
+                <NuxtLink v-if="isCommunityAdmin && community?.id" :to="`/community/${community.id}/manage`" class="text-sm ml-2">管理</NuxtLink>
+              </template>
+              <ul class="space-y-2 text-left text-sm text-text-body">
+                <li v-for="a in announcements" :key="a.id" class="flex items-start gap-2">
+                  <span v-if="a.isPinned" class="text-primary shrink-0">📌</span>
+                  <span class="font-medium text-text-title">{{ a.title }}</span>
+                  <span class="text-text-placeholder">{{ a.content ? ' · ' + (a.content.slice(0, 60) + (a.content.length > 60 ? '…' : '')) : '' }}</span>
+                </li>
+              </ul>
+            </PixelCard>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <PixelCard>
-                <template #header>市政厅 (TOWN HALL)</template>
+                <template #header>
+                  <span>市政厅 (TOWN HALL)</span>
+                  <NuxtLink v-if="isCommunityAdmin && community?.id" :to="`/community/${community.id}/edit`" class="inline-flex items-center justify-center w-7 h-7 rounded-lg ml-2 text-text-body hover:bg-input-bg" title="编辑">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </NuxtLink>
+                </template>
                 <div class="space-y-4 text-center">
                   <div class="w-full h-24 bg-input-bg rounded-2xl flex items-center justify-center border border-dashed border-border relative overflow-hidden">
                     <div class="absolute inset-0 flex items-center justify-center text-6xl opacity-20">🏰</div>
@@ -334,7 +357,7 @@ import { useCommunityStore } from '~/stores/community'
 import PixelCard from '~/components/pixel/PixelCard.vue'
 import PixelAvatar from '~/components/pixel/PixelAvatar.vue'
 import PixelButton from '~/components/pixel/PixelButton.vue'
-import { getCommunityById, getCommunityMembers, getMemberById, getCommunities, DEFAULT_COMMUNITY_UUID, type Community } from '~/utils/api'
+import { getCommunityById, getCommunityMembers, getCommunityAnnouncements, getCommunities, DEFAULT_COMMUNITY_UUID, type Community, type Announcement } from '~/utils/api'
 import type { Post, Comment, Like } from '~/utils/api'
 
 // Use definePageMeta to ensure layout is applied
@@ -359,8 +382,13 @@ const tabs = [
 ]
 
 // Data
-const community = ref<any>(null)
+const community = ref<Community | null>(null)
 const members = ref<any[]>([])
+const announcements = ref<Announcement[]>([])
+const isCommunityAdmin = computed(() => {
+  const r = community.value?.myRole
+  return r === 'super_admin' || r === 'sub_admin'
+})
 
 // 用户社区相关数据
 const userCommunity = ref<Community | null>(null)
@@ -634,73 +662,33 @@ const loadCommunityData = async (communityId: string) => {
     community.value = await getCommunityById(communityId)
     if (community.value) {
       members.value = await getCommunityMembers(communityId)
+      try {
+        announcements.value = await getCommunityAnnouncements(communityId)
+      } catch (_) {
+        announcements.value = []
+      }
     }
   } catch (error) {
     console.error('Failed to load community data:', error)
   }
 }
 
-// 获取用户所属社区
+// 获取用户所属社区（我加入的社区列表，取第一个作为 userCommunity 并设置 store）
 const loadUserCommunity = async () => {
   try {
-    // 确保用户信息已加载
     const user = await userStore.getUser()
-    
-    if (!user || !user.id) {
-      console.log('用户未登录或用户ID不存在')
-      // 重定向到登录页
+    if (!user?.id) {
       router.push('/auth/login')
       return
     }
-
-    console.log('加载用户社区信息，用户ID:', user.id)
-    
-    // 获取成员信息
-    const member = await getMemberById(user.id)
-    
-    if (!member) {
-      console.log('未找到成员信息，用户ID:', user.id)
-      // 成员信息不存在是正常的（可能是新用户），不重定向
-      return
-    }
-
-    console.log('找到成员信息:', member.name, '所属社区:', member.communities)
-    
-    if (member.communities.length === 0) {
-      console.log('成员未加入任何社区')
-      return
-    }
-
-    // 获取所有社区信息
-    const allCommunities = await getCommunities()
-    console.log('所有社区:', allCommunities.map(c => ({ id: c.id, name: c.name, pointName: c.pointName })))
-    
-    // 找到用户所属的第一个社区（如果有多个，取第一个）
-    // 将 UUID 转换为数字 ID 用于 mock 数据兼容性（临时处理）
-    const community = allCommunities.find(c => {
-      const commIdNum = c.id === DEFAULT_COMMUNITY_UUID ? 1 : 
-                        c.id === '00000000-0000-0000-0000-000000000002' ? 2 : null
-      return commIdNum !== null && member.communities.includes(commIdNum)
-    })
-    
-    if (community) {
-      console.log('找到用户社区:', community.name, '积分名称:', community.pointName)
-      userCommunity.value = community
-      
-      // 确保 communityStore 也设置了当前社区（如果还没有设置）
-      if (!communityStore.currentCommunityId) {
-        await communityStore.setCurrentCommunity(community.id)
-        console.log('已设置 communityStore 当前社区:', community.id)
-      }
-    } else {
-      console.log('未找到匹配的社区信息')
+    const list = await getCommunities({ mine: true })
+    if (list.length > 0) {
+      userCommunity.value = list[0]
+      if (!communityStore.currentCommunityId) await communityStore.setCurrentCommunity(list[0].id)
     }
   } catch (error) {
     console.error('Failed to load user community:', error)
-    // 错误时也检查是否需要登录
-    if (!userStore.isAuthenticated) {
-      router.push('/auth/login')
-    }
+    if (!userStore.isAuthenticated) router.push('/auth/login')
   }
 }
 

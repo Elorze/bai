@@ -68,4 +68,28 @@ export const authenticate = async (req:AuthRequest,res:Response,next:NextFunctio
     }
 }
 
-
+/** 可选认证：有 token 则设置 req.user，无 token 不报错 */
+export const optionalAuthenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const authHeader = req.headers.authorization
+        if (!authHeader || !authHeader.startsWith('Bearer ')) return next()
+        const token = authHeader.split(' ')[1]
+        const { data: authToken, error: tokenError } = await supabase
+            .from('auth_tokens')
+            .select('user_id')
+            .eq('token', token)
+            .eq('disabled', false)
+            .single()
+        if (tokenError || !authToken) return next()
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authToken.user_id)
+            .single()
+        if (userError || !user) return next()
+        req.user = user as User
+        next()
+    } catch (_) {
+        next()
+    }
+}

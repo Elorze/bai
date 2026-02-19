@@ -614,17 +614,35 @@ const handleError = (res: Response, error: any, defaultMessage: string) => {
 }
 
 
-// 获取所有任务（适配新数据库结构）
+// 获取所有任务（适配新数据库结构）；支持 ?communityId= 按社区过滤
 export const getAllTasks = async (req: Request, res: Response) => {
     try {
+      const communityId = (req.query.communityId as string)?.trim() || null
+
       // 只选择 tasks 表中存在的字段（排除已删除的字段）
-      const { data: tasksData, error } = await supabase
-        .from('tasks')
-        .select('id, task_info_id, creator_id, claimer_id, reward, currency, weight_coefficient, participant_index, status, completed_at, created_at, updated_at')
-        .order('created_at', { ascending: false })
-  
-      if (error) throw error
-  
+      let tasksData: any[] = []
+      if (communityId) {
+        const { data: infoIds } = await supabase.from('task_info').select('id').eq('community_id', communityId)
+        const ids = (infoIds || []).map((i: any) => i.id)
+        if (ids.length === 0) {
+          return res.json([])
+        }
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('id, task_info_id, creator_id, claimer_id, reward, currency, weight_coefficient, participant_index, status, completed_at, created_at, updated_at')
+          .in('task_info_id', ids)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        tasksData = data || []
+      } else {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('id, task_info_id, creator_id, claimer_id, reward, currency, weight_coefficient, participant_index, status, completed_at, created_at, updated_at')
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        tasksData = data || []
+      }
+
       // 获取所有 task_info_id
       const taskInfoIds = [...new Set(tasksData.filter(t => t.task_info_id).map(t => t.task_info_id))]
       
@@ -1089,7 +1107,8 @@ export const createTask = async (req: AuthRequest, res: Response) => {
           proof_config: proofConfigWithAssignedUsers || null,
           submission_instructions: params.submissionInstructions || null,
           creator_id: userId,
-          assigned_user_id: assignedUserId  // 指定参与人员ID（使用第一个，向后兼容）
+          assigned_user_id: assignedUserId,  // 指定参与人员ID（使用第一个，向后兼容）
+          community_id: params.communityId || null  // 所属社区
         })
         .select()
         .single()

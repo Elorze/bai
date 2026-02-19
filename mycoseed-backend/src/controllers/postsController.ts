@@ -1,6 +1,7 @@
 import { Response } from 'express'
 import { supabase } from '../services/supabase'
 import { AuthRequest } from '../middleware/auth'
+import { getMemberRole } from '../middleware/communityAdmin'
 import { 
     Post, 
     Comment, 
@@ -687,11 +688,11 @@ export const pinPost = async (req: AuthRequest, res: Response) => {
         }
 
         const postId = req.params.postId
+        const { data: post } = await supabase.from('community_posts').select('community_id').eq('id', postId).single()
+        if (!post?.community_id) return res.status(404).json({ error: '动态不存在' })
+        const role = await getMemberRole(post.community_id, user.id)
+        if (role !== 'super_admin' && role !== 'sub_admin') return res.status(403).json({ error: '仅社区管理员可置顶' })
 
-        // TODO: 添加管理员权限检查
-        // 当前暂时允许所有用户置顶（后续需要添加社区管理员权限检查）
-
-        // 更新动态为置顶
         const { error: updateError } = await supabase
             .from('community_posts')
             .update({ is_pinned: true })
@@ -718,11 +719,11 @@ export const unpinPost = async (req: AuthRequest, res: Response) => {
         }
 
         const postId = req.params.postId
+        const { data: post } = await supabase.from('community_posts').select('community_id').eq('id', postId).single()
+        if (!post?.community_id) return res.status(404).json({ error: '动态不存在' })
+        const role = await getMemberRole(post.community_id, user.id)
+        if (role !== 'super_admin' && role !== 'sub_admin') return res.status(403).json({ error: '仅社区管理员可取消置顶' })
 
-        // TODO: 添加管理员权限检查
-        // 当前暂时允许所有用户取消置顶（后续需要添加社区管理员权限检查）
-
-        // 更新动态为取消置顶
         const { error: updateError } = await supabase
             .from('community_posts')
             .update({ is_pinned: false })
