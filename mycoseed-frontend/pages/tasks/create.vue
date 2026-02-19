@@ -365,7 +365,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import PixelCard from '~/components/pixel/PixelCard.vue'
 import PixelButton from '~/components/pixel/PixelButton.vue'
-import { createTask, getApiBaseUrl, getCookie, AUTH_TOKEN_KEY } from '~/utils/api'
+import { createTask, getApiBaseUrl, getCookie, AUTH_TOKEN_KEY, getCommunityMembers } from '~/utils/api'
 import { useToast } from '~/composables/useToast'
 import { getCurrentBeijingTime } from '~/utils/time'
 import { useCommunityStore } from '~/stores/community'
@@ -713,42 +713,33 @@ const publishTask = async () => {
   }
 }
 
-// 加载用户列表
+// 加载用户列表（仅当前社区成员）
 const loadUsers = async () => {
   try {
     const baseUrl = getApiBaseUrl()
-    const token = getCookie(AUTH_TOKEN_KEY)
+    const communityId = communityStore.currentCommunityId
     
-    if (!token) {
-      console.warn('未找到认证token，无法加载用户列表')
+    if (!communityId) {
+      console.warn('未选择社区，无法加载用户列表')
+      allUsers.value = []
+      filteredUsers.value = []
       return
     }
     
-    const response = await fetch(`${baseUrl}/api/auth/users`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) {
-      console.error('加载用户列表失败:', response.status, response.statusText)
-      if (response.status === 404) {
-        console.error('API路由不存在，请确保后端服务器已重启并包含最新的路由')
-      }
-      return
-    }
-    
-    const data = await response.json()
-    if (data.result === 'ok' && data.users) {
-      allUsers.value = data.users
-      filteredUsers.value = data.users
-    } else {
-      console.error('用户列表数据格式错误:', data)
-    }
+    // 获取当前社区成员列表
+    const members = await getCommunityMembers(communityId, baseUrl)
+    // 转换为用户列表格式
+    allUsers.value = members.map(m => ({
+      id: m.userId,
+      name: m.name || '未命名',
+      phone: undefined,
+      email: undefined
+    }))
+    filteredUsers.value = allUsers.value
   } catch (error) {
     console.error('加载用户列表失败:', error)
+    allUsers.value = []
+    filteredUsers.value = []
   }
 }
 
@@ -808,6 +799,15 @@ const handleClickOutside = (event: MouseEvent) => {
     showUserDropdown.value = false
   }
 }
+
+// 监听社区变化，重新加载用户列表
+watch(() => communityStore.currentCommunityId, () => {
+  if (assignUser.value) {
+    loadUsers()
+    // 清空已选择的用户（因为可能不属于新社区）
+    selectedUsers.value = []
+  }
+})
 
 // 初始化最小开始时间
 onMounted(() => {

@@ -1079,6 +1079,24 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       const assignedUserIds = params.assignedUserIds || (params.assignedUserId ? [params.assignedUserId] : [])
       const assignedUserId = assignedUserIds.length > 0 ? assignedUserIds[0] : null
       
+      // 如果指定了社区和用户，验证这些用户是否属于该社区
+      if (params.communityId && assignedUserIds.length > 0) {
+        const { data: communityMembers } = await supabase
+          .from('community_members')
+          .select('user_id')
+          .eq('community_id', params.communityId)
+          .in('user_id', assignedUserIds)
+        
+        const memberIds = new Set((communityMembers || []).map((m: any) => m.user_id))
+        const invalidUserIds = assignedUserIds.filter(id => !memberIds.has(id))
+        
+        if (invalidUserIds.length > 0) {
+          return res.status(400).json({ 
+            error: `指定的用户不属于当前社区: ${invalidUserIds.join(', ')}` 
+          })
+        }
+      }
+      
       console.log('[CREATE TASK] 接收到的参数:', {
         assignedUserId: params.assignedUserId,
         assignedUserIds: params.assignedUserIds,
@@ -1336,6 +1354,20 @@ export const claimTask = async (req: AuthRequest, res: Response) =>
             // 如果是多人任务，检查用户是否在指定列表中
             if (!assignedUserIds.includes(user.id)) {
                 return res.status(403).json({ success: false, message: '此任务已指定给其他用户，您无法领取' })
+            }
+        }
+
+        // 验证用户是否属于该任务的社区
+        if (taskInfo?.community_id) {
+            const { data: member } = await supabase
+                .from('community_members')
+                .select('user_id')
+                .eq('community_id', taskInfo.community_id)
+                .eq('user_id', user.id)
+                .maybeSingle()
+            
+            if (!member) {
+                return res.status(403).json({ success: false, message: '您不属于该任务的社区，无法领取' })
             }
         }
 

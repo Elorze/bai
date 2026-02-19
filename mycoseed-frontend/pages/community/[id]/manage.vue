@@ -59,6 +59,50 @@
             </ul>
           </section>
 
+          <!-- 添加成员 -->
+          <section class="bg-card rounded-2xl border border-border p-4 space-y-3">
+            <h2 class="font-bold text-text-title">添加成员</h2>
+            <div class="relative">
+              <input
+                v-model="addMemberSearch"
+                type="text"
+                placeholder="搜索用户名、UUID、手机号或邮箱"
+                class="w-full px-4 py-2 rounded-xl border border-border bg-input-bg text-text-body"
+                @input="searchAddMember"
+                @focus="showAddMemberDropdown = true"
+              />
+              <div
+                v-if="showAddMemberDropdown && addMemberSearchResults.length > 0"
+                class="absolute z-10 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
+              >
+                <button
+                  v-for="u in addMemberSearchResults"
+                  :key="u.id"
+                  type="button"
+                  class="w-full px-4 py-2 text-left hover:bg-input-bg text-text-body text-sm border-b border-border last:border-0"
+                  @click="selectAddMember(u)"
+                >
+                  <div class="font-medium">{{ u.name || '未命名' }}</div>
+                  <div class="text-xs text-text-placeholder font-mono">{{ u.id }}</div>
+                </button>
+              </div>
+            </div>
+            <div v-if="selectedAddMember" class="px-3 py-2 rounded-lg bg-input-bg text-sm flex items-center justify-between">
+              <div>
+                <span class="text-text-body">已选择：</span>
+                <span class="font-medium text-text-title">{{ selectedAddMember.name || '未命名' }}</span>
+              </div>
+              <div class="flex gap-2">
+                <select v-model="addMemberRole" class="px-2 py-1 rounded border border-border bg-card text-sm text-text-body">
+                  <option value="member">成员</option>
+                  <option v-if="community.myRole === 'super_admin'" value="sub_admin">分管理员</option>
+                </select>
+                <button type="button" class="px-3 py-1 rounded bg-primary text-white text-sm" @click="doAddMember">添加</button>
+                <button type="button" class="px-2 py-1 rounded border border-border text-sm" @click="clearAddMember">取消</button>
+              </div>
+            </div>
+          </section>
+
           <!-- 成员列表 -->
           <section class="bg-card rounded-2xl border border-border p-4 space-y-3">
             <h2 class="font-bold text-text-title">成员 ({{ members.length }})</h2>
@@ -96,13 +140,16 @@ import {
   updateCommunity,
   transferSuperAdmin as apiTransfer,
   patchCommunityMember,
+  addCommunityMember,
   getCommunityJoinRequests,
   approveJoinRequest,
   rejectJoinRequest,
+  getAllUsers,
   getApiBaseUrl,
   type Community,
   type CommunityMemberItem,
   type JoinRequestItem,
+  type UserListItem,
 } from '~/utils/api'
 
 definePageMeta({ layout: 'default' })
@@ -118,6 +165,13 @@ const isPublic = ref(true)
 const transferTarget = ref('')
 const demoteTo = ref<'member' | 'sub_admin'>('member')
 const transferring = ref(false)
+const addMemberSearch = ref('')
+const addMemberSearchResults = ref<UserListItem[]>([])
+const selectedAddMember = ref<UserListItem | null>(null)
+const addMemberRole = ref<'member' | 'sub_admin'>('member')
+const showAddMemberDropdown = ref(false)
+const allUsers = ref<UserListItem[]>([])
+const addingMember = ref(false)
 
 const isAdmin = computed(() => community.value?.myRole === 'super_admin' || community.value?.myRole === 'sub_admin')
 
@@ -129,6 +183,61 @@ function canManageMember(m: CommunityMemberItem) {
   if (community.value?.myRole === 'super_admin') return m.role !== 'super_admin'
   if (community.value?.myRole === 'sub_admin') return m.role === 'member'
   return false
+}
+
+async function loadUsers() {
+  try {
+    allUsers.value = await getAllUsers(getApiBaseUrl())
+  } catch (_) {
+    allUsers.value = []
+  }
+}
+
+function searchAddMember() {
+  const q = addMemberSearch.value.trim().toLowerCase()
+  if (!q) {
+    addMemberSearchResults.value = []
+    return
+  }
+  // 过滤掉已经是成员的用户
+  const memberIds = new Set(members.value.map(m => m.userId))
+  addMemberSearchResults.value = allUsers.value
+    .filter(u => !memberIds.has(u.id))
+    .filter(u => 
+      (u.name && u.name.toLowerCase().includes(q)) ||
+      u.id.toLowerCase().includes(q) ||
+      (u.phone && u.phone.includes(q)) ||
+      (u.email && u.email.toLowerCase().includes(q))
+    )
+    .slice(0, 10)
+}
+
+function selectAddMember(user: UserListItem) {
+  selectedAddMember.value = user
+  addMemberSearch.value = user.name || user.id
+  showAddMemberDropdown.value = false
+}
+
+function clearAddMember() {
+  selectedAddMember.value = null
+  addMemberSearch.value = ''
+  addMemberSearchResults.value = []
+  addMemberRole.value = 'member'
+}
+
+async function doAddMember() {
+  if (!selectedAddMember.value) return
+  if (!confirm(`确定将 ${selectedAddMember.value.name || selectedAddMember.value.id} 添加为${addMemberRole.value === 'sub_admin' ? '分管理员' : '成员'}？`)) return
+  addingMember.value = true
+  try {
+    await addCommunityMember(id, { userId: selectedAddMember.value.id, role: addMemberRole.value }, getApiBaseUrl())
+    clearAddMember()
+    await load()
+  } catch (e: any) {
+    alert(e.message || '添加失败')
+  } finally {
+    addingMember.value = false
+  }
 }
 
 async function load() {
@@ -144,6 +253,8 @@ async function load() {
       } catch (_) {
         joinRequests.value = []
       }
+      // 加载用户列表用于添加成员
+      if (allUsers.value.length === 0) await loadUsers()
     }
   } catch (_) {}
 }

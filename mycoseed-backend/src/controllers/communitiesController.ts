@@ -254,6 +254,25 @@ export const getMembers = async (req: AuthRequest, res: Response) => {
     }
 }
 
+/** POST /api/communities/:id/members — 管理员直接添加成员（无需审批） */
+export const addMember = async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id
+        const { userId, role } = req.body || {}
+        if (!userId) return res.status(400).json({ result: 'error', message: 'userId required' })
+        const myRole = await getMemberRole(id, req.user!.id)
+        if (myRole !== 'super_admin' && myRole !== 'sub_admin') return res.status(403).json({ result: 'error', message: '需要管理员权限' })
+        const { data: existing } = await supabase.from('community_members').select('role').eq('community_id', id).eq('user_id', userId).maybeSingle()
+        if (existing) return res.status(400).json({ result: 'error', message: '该用户已是成员' })
+        const targetRole = role === 'sub_admin' && myRole === 'super_admin' ? 'sub_admin' : 'member'
+        await supabase.from('community_members').insert({ community_id: id, user_id: userId, role: targetRole })
+        res.json({ result: 'ok', message: '已添加' })
+    } catch (e: any) {
+        console.error(e)
+        res.status(500).json({ result: 'error', message: e.message || 'Internal server error' })
+    }
+}
+
 /** PATCH /api/communities/:id/members/:userId — 踢人或改 role（总管理员可设 sub_admin） */
 export const patchMember = async (req: AuthRequest, res: Response) => {
     try {

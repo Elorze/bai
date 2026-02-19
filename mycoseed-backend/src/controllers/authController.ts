@@ -239,11 +239,19 @@ export const getMeController = async (req: Request, res:Response) =>
             return res.status(401).json({result:'error',message:'Unauthorized'})
         }
 
+        // 检查是否为系统管理员
+        const { data: systemAdmin } = await supabase
+            .from('system_admins')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
         // 统一字段名：将 image_url 映射为 avatar（前端使用）
         // 同时移除敏感字段（password_hash）
         const userResponse: any = {
             ...user,
             avatar: user.avatar || user.image_url,  // 优先使用 avatar，否则使用 image_url
+            isSystemAdmin: !!systemAdmin,  // 是否为系统管理员
         }
         // 删除不需要返回的字段
         delete userResponse.image_url

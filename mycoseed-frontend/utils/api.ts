@@ -1126,6 +1126,31 @@ export const getMe = async (baseUrl: string): Promise<any> => {
   return userData
 }
 
+/** 用户列表项（用于搜索/选择） */
+export interface UserListItem {
+  id: string
+  name?: string
+  phone?: string
+  email?: string
+}
+
+/** 获取所有用户列表（用于搜索/选择，需登录） */
+export const getAllUsers = async (baseUrl?: string): Promise<UserListItem[]> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/auth/users`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+  })
+  if (!res.ok) throw new Error('获取用户列表失败')
+  const data = await res.json()
+  return (data.users || []).map((u: any) => ({
+    id: u.id,
+    name: u.name,
+    phone: u.phone,
+    email: u.email,
+  }))
+}
+
 export const setEncryptedKeys = async (keys: string): Promise<{ result: string }> => {
   await new Promise(resolve => setTimeout(resolve, 500))
   console.log('[Mock] 设置加密密钥')
@@ -2025,6 +2050,52 @@ export const getCommunityAnnouncements = async (
   return list || []
 }
 
+/** 创建社区（仅系统管理员） */
+export const createCommunity = async (
+  payload: {
+    name: string
+    slug: string
+    description?: string
+    markdownIntro?: string
+    isPublic?: boolean
+    pointName?: string
+    superAdminId?: string
+  },
+  baseUrl?: string
+): Promise<Community> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({
+      name: payload.name,
+      slug: payload.slug,
+      description: payload.description,
+      markdown_intro: payload.markdownIntro,
+      is_public: payload.isPublic !== false,
+      point_name: payload.pointName || '积分',
+      super_admin_id: payload.superAdminId || null,
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || '创建失败')
+  }
+  const c = await res.json()
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    memberCount: c.memberCount ?? 0,
+    pointName: c.pointName || '积分',
+    markdownIntro: c.markdownIntro,
+    slug: c.slug,
+    isPublic: c.isPublic,
+    superAdminId: c.superAdminId,
+    createdAt: c.createdAt || '',
+  }
+}
+
 /** 更新社区（名称、简介、公开性等，需总管理员或系统管理员） */
 export const updateCommunity = async (
   communityId: string,
@@ -2069,6 +2140,22 @@ export const transferSuperAdmin = async (
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || '转让失败')
+}
+
+/** 添加成员（管理员直接添加，无需审批） */
+export const addCommunityMember = async (
+  communityId: string,
+  body: { userId: string; role?: 'member' | 'sub_admin' },
+  baseUrl?: string
+): Promise<void> => {
+  const url = baseUrl ?? getApiBaseUrl()
+  const res = await fetch(`${url}/api/communities/${communityId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '添加失败')
 }
 
 /** 更新成员角色或移除成员 */

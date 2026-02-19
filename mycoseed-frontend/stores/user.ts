@@ -16,6 +16,7 @@ export interface User {
     updated_at?: string
     userType?: 'member' | 'community'
     isProfileSetup?: boolean
+    isSystemAdmin?: boolean  // 是否为系统管理员
 }
 
 export const useUserStore = defineStore('user', {
@@ -26,6 +27,7 @@ export const useUserStore = defineStore('user', {
         isAuthenticated: (state) => !!state.user,
         isMember: (state) => (state.user?.userType || 'member') === 'member',
         isCommunity: (state) => state.user?.userType === 'community',
+        isSystemAdmin: (state) => !!state.user?.isSystemAdmin,
         needsProfileSetup: (state) => {
             if (!state.user) return false
             // 根据 name 或 handle 是否存在判断是否完成资料设置
